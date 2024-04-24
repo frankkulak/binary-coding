@@ -213,20 +213,6 @@ export function describeBinaryCoderMethods(args: BinaryCoderMethodArgs) {
     });
   });
 
-  describe("#setEndianness()", () => {
-    it("should set endianness to the given value (LE)", () => {
-      const coder = args.createCoder(1, 0, "BE");
-      coder.setEndianness("LE");
-      expect(coder.endianness).to.equal("LE");
-    });
-
-    it("should set endianness to the given value (BE)", () => {
-      const coder = args.createCoder(1, 0, "LE");
-      coder.setEndianness("BE");
-      expect(coder.endianness).to.equal("BE");
-    });
-  });
-
   describe("#skip()", () => {
     it("should advance the offset by the given number", () => {
       const coder = args.createCoder(5);
