@@ -35,6 +35,8 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * @returns String parsed with given encoding
    */
   chars(bytes: number, encoding: BufferEncoding = "utf-8"): string {
+    if (!this.hasClearance(bytes))
+      throw new RangeError("Cannot read characters beyond buffer bounds.");
     const end = this.offset + bytes;
     const result = this.buffer.toString(encoding, this.offset, end);
     this.seek(end);
@@ -132,6 +134,8 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * @returns The sliced buffer
    */
   slice(size: number): Buffer {
+    if (!this.hasClearance(size))
+      throw new RangeError("Cannot slice buffer beyond bounds.");
     const end = this.offset + size;
     const slice = this.buffer.slice(this.offset, end);
     this.seek(end);

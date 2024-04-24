@@ -194,9 +194,9 @@ describe("BinaryDecoder", () => {
       expect(decoder.offset).to.equal(4);
     });
 
-    it("should NOT throw if going beyond buffer length", () => {
+    it("should throw if going beyond buffer length", () => {
       const decoder = new BinaryDecoder(Buffer.from("tes"));
-      expect(() => decoder.charsUtf8(4)).to.not.throw();
+      expect(() => decoder.charsUtf8(4)).to.throw();
     });
   });
 
@@ -223,9 +223,9 @@ describe("BinaryDecoder", () => {
       expect(decoder.offset).to.equal(byteLength);
     });
 
-    it("should NOT throw if going beyond buffer length", () => {
+    it("should throw if going beyond buffer length", () => {
       const decoder = new BinaryDecoder(Buffer.alloc(0));
-      expect(() => decoder.charsBase64(4)).to.not.throw();
+      expect(() => decoder.charsBase64(4)).to.throw();
     });
   });
 
@@ -357,9 +357,9 @@ describe("BinaryDecoder", () => {
       expect(decoder.offset).to.equal(2);
     });
 
-    it("should NOT throw if going beyond buffer length", () => {
+    it("should throw if going beyond buffer length", () => {
       const decoder = new BinaryDecoder(Buffer.from([2, 4, 8, 16]));
-      expect(() => decoder.slice(5)).to.not.throw();
+      expect(() => decoder.slice(5)).to.throw();
     });
   });
 
