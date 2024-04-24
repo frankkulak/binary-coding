@@ -114,6 +114,15 @@ export default abstract class BinaryCoderBase {
   }
 
   /**
+   * Returns the byte at the current offset, without advancing the offset.
+   * 
+   * @returns Byte at the current offset
+   */
+  peek(): number {
+    return this.buffer.at(this.offset);
+  }
+
+  /**
    * Saves the value of the current endianness, runs the given function, and
    * then restores the endianness to the initial saved value.
    * 

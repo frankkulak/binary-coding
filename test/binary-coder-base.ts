@@ -310,6 +310,23 @@ export function describeBinaryCoderMethods(args: BinaryCoderMethodArgs) {
     });
   });
 
+  describe("#peek()", () => {
+    it("should return the byte at the current offset", () => {
+      const coder = args.createCoder(4);
+      coder.buffer.writeUInt32BE(0x12345678);
+      expect(coder.peek()).to.equal(0x12);
+      coder.seek(3);
+      expect(coder.peek()).to.equal(0x78);
+    });
+
+    it("should not advance the offset", () => {
+      const coder = args.createCoder(4);
+      coder.buffer.writeUInt32BE(0x12345678);
+      expect(coder.peek()).to.equal(0x12);
+      expect(coder.offset).to.equal(0);
+    });
+  });
+
   describe("#saveEndianness()", () => {
     it("should execute the given function", () => {
       const coder = args.createCoder(5);
