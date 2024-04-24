@@ -138,12 +138,77 @@ describe("BinaryEncoder", () => {
 
   //#region Text / Strings
 
+  const charEncodings: readonly BufferEncoding[] = ["utf-8", "base64", "ascii"];
+
   describe("#chars()", () => {
-    // TODO:
+    charEncodings.forEach(encoding => {
+      it(`should encode the given chars (${encoding})`, () => {
+        const byteLength = Buffer.byteLength("test", encoding);
+        const encoder = BinaryEncoder.alloc(byteLength);
+        encoder.chars("test", encoding);
+        expect(encoder.buffer.toString(encoding)).to.equal("test");
+      });
+    });
+
+    it("should write at the current offset", () => {
+      const encoder = BinaryEncoder.alloc(6, 2);
+      encoder.chars("test");
+      expect(encoder.buffer.slice(2, 6).toString()).to.equal("test");
+    });
+
+    it("should advance the offset by the byte length of the given chars", () => {
+      const encoder = BinaryEncoder.alloc(4);
+      encoder.chars("test");
+      expect(encoder.offset).to.equal(4);
+    });
+
+    it("should throw if going beyond buffer length", () => {
+      const encoder = BinaryEncoder.alloc(3);
+      expect(() => encoder.chars("test")).to.throw();
+    });
   });
 
   describe("#terminatedString()", () => {
-    // TODO:
+    charEncodings.forEach(encoding => {
+      const byteLength = Buffer.byteLength("test", encoding);
+
+      it(`should encode the given string (${encoding})`, () => {
+        const encoder = BinaryEncoder.alloc(byteLength + 1);
+        encoder.terminatedString("test", encoding);
+        expect(encoder.buffer.toString(encoding, 0, byteLength)).to.equal("test");
+      });
+
+      it(`should replace junk with a 0 for the null byte (${encoding})`, () => {
+        const buffer = Buffer.alloc(byteLength + 1);
+        buffer.fill(0x12);
+        const encoder = new BinaryEncoder(buffer);
+        expect(encoder.buffer.at(byteLength)).to.equal(0x12);
+        encoder.terminatedString("test", encoding);
+        expect(encoder.buffer.at(byteLength)).to.equal(0);
+      });
+
+      it(`should advance the offset by the byte length plus 1 (${encoding})`, () => {
+        const encoder = BinaryEncoder.alloc(byteLength + 1);
+        encoder.terminatedString("test", encoding);
+        expect(encoder.offset).to.equal(byteLength + 1);
+      });
+
+      it(`should throw if string goes beyond buffer length (${encoding})`, () => {
+        const encoder = BinaryEncoder.alloc(3);
+        expect(() => encoder.terminatedString("test")).to.throw();
+      });
+
+      it(`should throw if null terminator goes beyond buffer length (${encoding})`, () => {
+        const encoder = BinaryEncoder.alloc(4);
+        expect(() => encoder.terminatedString("test")).to.throw();
+      });
+    });
+
+    it("should write at the current offset", () => {
+      const encoder = BinaryEncoder.alloc(7, 2);
+      encoder.terminatedString("test");
+      expect(encoder.buffer.slice(2, 6).toString()).to.equal("test");
+    });
   });
 
   describe("[deprecated]#charsUtf8()", () => {

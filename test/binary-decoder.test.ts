@@ -111,12 +111,69 @@ describe("BinaryDecoder", () => {
 
   //#region Text / Strings
 
+  const charEncodings: readonly BufferEncoding[] = ["utf-8", "base64", "ascii"];
+
   describe("#chars()", () => {
-    // TODO:
+    charEncodings.forEach(encoding => {
+      it(`should decode the given number of bytes as chars (${encoding})`, () => {
+        const byteLength = Buffer.byteLength("test", encoding);
+        const decoder = new BinaryDecoder(Buffer.from("test", encoding));
+        expect(decoder.chars(byteLength, encoding)).to.equal("test");
+      });
+
+      it(`should advance the offset by the given byte length (${encoding})`, () => {
+        const byteLength = Buffer.byteLength("test", encoding);
+        const decoder = new BinaryDecoder(Buffer.from("test", encoding));
+        decoder.chars(byteLength, encoding);
+        expect(decoder.offset).to.equal(byteLength);
+      });
+    });
+
+    it("should read from the current offset", () => {
+      const buffer = Buffer.concat([Buffer.alloc(2), Buffer.from("test")]);
+      const decoder = new BinaryDecoder(buffer, 2);
+      expect(decoder.chars(4)).to.equal("test");
+    });
+
+    it("should throw if going beyond buffer length", () => {
+      const decoder = new BinaryDecoder(Buffer.from("tes"));
+      expect(() => decoder.chars(4)).to.throw();
+    });
   });
 
   describe("#terminatedString()", () => {
-    // TODO:
+    charEncodings.forEach(encoding => {
+      it(`should decode bytes as string until a null terminator is found (${encoding})`, () => {
+        const byteLength = Buffer.byteLength("test");
+        const buffer = Buffer.alloc(byteLength + 1);
+        buffer.write("test", encoding);
+        const decoder = new BinaryDecoder(buffer);
+        expect(decoder.terminatedString(encoding)).to.equal("test");
+      });
+
+      it(`should advance the offset by the byte length plus 1 ${encoding}`, () => {
+        const byteLength = Buffer.byteLength("test");
+        const buffer = Buffer.alloc(byteLength + 1);
+        buffer.write("test");
+        const decoder = new BinaryDecoder(buffer);
+        decoder.terminatedString();
+        expect(decoder.offset).to.equal(byteLength + 1);
+      });
+    });
+
+    it("should read from the current offset", () => {
+      const buffer = Buffer.alloc(5);
+      buffer.write("test");
+      const decoder = new BinaryDecoder(Buffer.concat([Buffer.alloc(2), buffer]), 2);
+      expect(decoder.terminatedString()).to.equal("test");
+    });
+
+    it("should throw if there is no null terminator byte", () => {
+      const buffer = Buffer.alloc(4);
+      buffer.write("test");
+      const decoder = new BinaryDecoder(buffer);
+      expect(() => decoder.terminatedString()).to.throw();
+    });
   });
 
   describe("[deprecated]#charsUtf8()", () => {
@@ -173,7 +230,7 @@ describe("BinaryDecoder", () => {
   });
 
   describe("[deprecated]#string()", () => {
-    it("should decode bytes as a UTF-8 until a null terminator is found", () => {
+    it("should decode bytes as a UTF-8 string until a null terminator is found", () => {
       const buffer = Buffer.alloc(5);
       buffer.write("test");
       const decoder = new BinaryDecoder(buffer);
