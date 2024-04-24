@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { BinaryEncoder, Endianness } from "../dst/binary-coding";
+import { describeBinaryCoderMethods } from "./binary-coder-base";
 import type { NumberMethodArgs } from "./types";
-import { describeBinaryCoderMethods } from "./coder-base";
 
 //#region Helpers
 
