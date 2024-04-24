@@ -28,55 +28,68 @@ export default class BinaryDecoder extends BinaryCoderBase {
   //#region Text / Encoded Bytes
 
   /**
-   * Reads the given number of bytes as characters in the given encoding.
+   * Reads the given number of bytes as a string with the given encoding.
    * 
-   * @param num Number of bytes to read
-   * @param encoding Encoding to read bytes as
-   * @returns The characters read as a string
+   * @param bytes Number of bytes to read
+   * @param encoding Character encoding to parse with ("utf-8" by default)
+   * @returns String parsed with given encoding
    */
-  private _chars(num: number, encoding: string): string {
-    const end = this.offset + num;
-    //@ts-ignore: Importing Encoding is a pain, and is not necessary at all
+  chars(bytes: number, encoding: BufferEncoding = "utf-8"): string {
+    const end = this.offset + bytes;
     const result = this.buffer.toString(encoding, this.offset, end);
     this.seek(end);
     return result;
   }
 
   /**
+   * Reads bytes until a null byte is found, parses them as a string with the
+   * given encoding, and returns the result. The offset will be advanced by the
+   * byte length + 1 (for the null byte).
+   * 
+   * @param encoding Character encoding to parse with ("utf-8" by default)
+   * @returns String parsed with given encoding
+   */
+  terminatedString(encoding: BufferEncoding = "utf-8"): string {
+    const start = this.offset;
+    let nextByte = this.byte();
+    if (!nextByte) return "";
+    while (nextByte) nextByte = this.byte();
+    return this.buffer.toString(encoding, start, this.offset - 1);
+  }
+
+  /**
    * Reads the given number of bytes as a string of UTF-8 characters.
    * 
-   * @param num Number of bytes to read
-   * @returns The characters read
+   * @deprecated Use `chars()` instead
+   * @param bytes Number of bytes to read
+   * @returns The characters read as a string with UTF-8 encoding
    */
-  charsUtf8(num: number): string { // TODO: deprecate
-    return this._chars(num, "utf-8");
+  charsUtf8(bytes: number): string {
+    return this.chars(bytes, "utf-8");
   }
 
   /**
    * Reads the given number of bytes as a string of Base64 characters.
    * 
-   * @param num Number of bytes to read
-   * @returns The characters read
+   * @deprecated Use `chars()` instead (add "base64" as second argument)
+   * @param bytes Number of bytes to read
+   * @returns The characters read as a string with Base64 encoding
    */
-  charsBase64(num: number): string { // TODO: deprecate
-    return this._chars(num, "base64");
+  charsBase64(bytes: number): string {
+    return this.chars(bytes, "base64");
   }
 
   /**
-   * Reads bytes until a null byte is found, parses them as a UTF-8 string. The
-   * offset will be left on the final null byte.
+   * Reads bytes until a null byte is found, parses them as a string with UTF-8
+   * encoding, and returns the result. The offset will be advanced by the byte
+   * length + 1 (for the null byte).
    * 
-   * @returns The string read
+   * @deprecated Use `terminatedString()` instead
+   * @returns The string read with UTF-8 encoding
    */
-  string(): string { // TODO: add encoding option
-    const start = this.offset;
-    let nextByte = this.byte();
-    if (!nextByte) return "";
-    while (nextByte) nextByte = this.byte();
-    return this.buffer.toString("utf8", start, this.offset - 1);
+  string(): string {
+    return this.terminatedString("utf-8");
   }
-
-  // TODO: chars with arbitrary encoding
 
   //#endregion Text / Encoded Bytes
 

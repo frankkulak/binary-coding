@@ -138,7 +138,15 @@ describe("BinaryEncoder", () => {
 
   //#region Text / Strings
 
-  describe("#charsUtf8()", () => {
+  describe("#chars()", () => {
+    // TODO:
+  });
+
+  describe("#terminatedString()", () => {
+    // TODO:
+  });
+
+  describe("[deprecated]#charsUtf8()", () => {
     it("should encode the given chars as UTF-8", () => {
       const encoder = BinaryEncoder.alloc(4);
       encoder.charsUtf8("test");
@@ -163,7 +171,7 @@ describe("BinaryEncoder", () => {
     });
   });
 
-  describe("#charsBase64()", () => {
+  describe("[deprecated]#charsBase64()", () => {
     it("should encode the given chars as Base64", () => {
       const bytes = Buffer.byteLength("test", "base64");
       const encoder = BinaryEncoder.alloc(bytes);

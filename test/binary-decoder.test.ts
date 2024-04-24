@@ -111,7 +111,15 @@ describe("BinaryDecoder", () => {
 
   //#region Text / Strings
 
-  describe("#charsUtf8()", () => {
+  describe("#chars()", () => {
+    // TODO:
+  });
+
+  describe("#terminatedString()", () => {
+    // TODO:
+  });
+
+  describe("[deprecated]#charsUtf8()", () => {
     it("should decode the given number of bytes as UTF-8 chars", () => {
       const decoder = new BinaryDecoder(Buffer.from("test"));
       expect(decoder.charsUtf8(4)).to.equal("test");
@@ -135,7 +143,7 @@ describe("BinaryDecoder", () => {
     });
   });
 
-  describe("#charsBase64()", () => {
+  describe("[deprecated]#charsBase64()", () => {
     it("should decode the given number of bytes as Base64 chars", () => {
       const buffer = Buffer.from("test", "base64");
       const byteLength = buffer.byteLength;
@@ -164,7 +172,7 @@ describe("BinaryDecoder", () => {
     });
   });
 
-  describe("#string()", () => {
+  describe("[deprecated]#string()", () => {
     it("should decode bytes as a UTF-8 until a null terminator is found", () => {
       const buffer = Buffer.alloc(5);
       buffer.write("test");

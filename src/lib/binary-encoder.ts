@@ -46,35 +46,44 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * Writes a string to the buffer using the given encoding.
    * 
    * @param value The characters to write
-   * @param encoding The encoding to write the string as
+   * @param encoding Character encoding to write with ("utf-8" by default)
    */
-  private _chars(value: string, encoding: string) {
+  chars(value: string, encoding: BufferEncoding = "utf-8") {
     // intentionally += because write() returns # bytes written
-    //@ts-ignore: Importing Encoding is a pain, and is not necessary at all
-    this.offset += this.buffer.write(value, this.offset, Buffer.byteLength(value, encoding), encoding);
+    this._offset += this.buffer.write(value, this.offset, Buffer.byteLength(value, encoding), encoding);
+  }
+
+  /**
+   * Writes a string to the buffer using the given encoding, then writes a null
+   * byte immediately after to terminate it.
+   * 
+   * @param value The string to write
+   * @param encoding Character encoding to write with ("utf-8" by default)
+   */
+  terminatedString(value: string, encoding: BufferEncoding = "utf-8") {
+    this.chars(value, encoding);
+    this.byte(0); // null byte
   }
 
   /**
    * Writes a string to the buffer using UTF-8 encoding.
    * 
+   * @deprecated Use `chars()` instead
    * @param value The characters to write
    */
-  charsUtf8(value: string) { // TODO: deprecate
-    this._chars(value, "utf-8");
+  charsUtf8(value: string) {
+    this.chars(value, "utf-8");
   }
 
   /**
    * Writes a string to the buffer using Base64 encoding.
    * 
+   * @deprecated Use `chars()` instead (add "base64" as second argument)
    * @param value The characters to write
    */
-  charsBase64(value: string) { // TODO: deprecate
-    this._chars(value, "base64");
+  charsBase64(value: string) {
+    this.chars(value, "base64");
   }
-
-  // TODO: arbitrary encoding
-
-  // TODO: null-terminated string w/ arbitrary encoding
 
   //#endregion Text / Encoded Bytes
 
