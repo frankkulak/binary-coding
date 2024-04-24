@@ -59,7 +59,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * 
    * @param value The characters to write
    */
-  charsUtf8(value: string) {
+  charsUtf8(value: string) { // TODO: deprecate
     this._chars(value, "utf-8");
   }
 
@@ -68,9 +68,13 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * 
    * @param value The characters to write
    */
-  charsBase64(value: string) {
+  charsBase64(value: string) { // TODO: deprecate
     this._chars(value, "base64");
   }
+
+  // TODO: arbitrary encoding
+
+  // TODO: null-terminated string w/ arbitrary encoding
 
   //#endregion Text / Encoded Bytes
 
@@ -115,7 +119,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    */
   private _number(value: number, methodName: BufferWriteNumberMethod) {
     // intentionally = because all number methods return current offset + # bytes written
-    this.offset = this.buffer[methodName](value, this.offset);
+    this._offset = this.buffer[methodName](value, this.offset);
   }
 
   /**
@@ -126,7 +130,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    */
   private _bigint(value: bigint, methodName: BufferWriteBigIntMethod) {
     // intentionally = because all number methods return current offset + # bytes written
-    this.offset = this.buffer[methodName](value, this.offset);
+    this._offset = this.buffer[methodName](value, this.offset);
   }
 
   /**

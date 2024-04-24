@@ -3,6 +3,32 @@ import { BinaryEncoder, BinaryDecoder } from "../dst/binary-coding";
 import { BinaryCoderMethodArgs } from "./types";
 
 export function describeBinaryCoderMethods(args: BinaryCoderMethodArgs) {
+  //#region Properties
+
+  describe("#byteLength", () => {
+    // TODO:
+  });
+
+  describe("#bytesRemaining", () => {
+    // TODO:
+  });
+
+  describe("#endianness", () => {
+    // TODO:
+  });
+
+  describe("#isOutOfBounds", () => {
+    // TODO:
+  });
+
+  describe("#offset", () => {
+    // TODO:
+  });
+
+  //#endregion
+
+  //#region Methods
+
   describe("#getDecoder()", () => {
     it("should return a new decoder instance", () => {
       const coder = args.createCoder(5);
@@ -92,31 +118,8 @@ export function describeBinaryCoderMethods(args: BinaryCoderMethodArgs) {
     });
   });
 
-  describe("#isEOF()", () => {
-    it("should return false at offset < 0", () => {
-      const coder = args.createCoder(5, -1);
-      expect(coder.isEOF()).to.be.false;
-    });
-
-    it("should return false at offset within range of buffer", () => {
-      const coder = args.createCoder(5, 2);
-      expect(coder.isEOF()).to.be.false;
-    });
-
-    it("should return false at offset of final byte of buffer", () => {
-      const coder = args.createCoder(5, 4);
-      expect(coder.isEOF()).to.be.false;
-    });
-
-    it("should return true at offset of buffer length", () => {
-      const coder = args.createCoder(5, 5);
-      expect(coder.isEOF()).to.be.true;
-    });
-
-    it("should return true at offset beyond buffer length", () => {
-      const coder = args.createCoder(5, 6);
-      expect(coder.isEOF()).to.be.true;
-    });
+  describe("#hasClearance()", () => {
+    // TODO:
   });
 
   describe("#iterate()", () => {
@@ -161,7 +164,122 @@ export function describeBinaryCoderMethods(args: BinaryCoderMethodArgs) {
     });
   });
 
-  describe("#savePos()", () => {
+  describe("#saveEndianness()", () => {
+    // TODO:
+  });
+
+  describe("#saveOffset()", () => {
+    // TODO:
+  });
+
+  describe("#seek()", () => {
+    it("should set the offset to the given number (< current)", () => {
+      const coder = args.createCoder(5, 4);
+      expect(coder.offset).to.equal(4);
+      coder.seek(2);
+      expect(coder.offset).to.equal(2);
+    });
+
+    it("[deprecated] should set the offset to the given bigint (< current)", () => {
+      const coder = args.createCoder(5, 4);
+      expect(coder.offset).to.equal(4);
+      coder.seek(2n);
+      expect(coder.offset).to.equal(2);
+    });
+
+    it("should set the offset to the given number (> current)", () => {
+      const coder = args.createCoder(5, 2);
+      expect(coder.offset).to.equal(2);
+      coder.seek(4);
+      expect(coder.offset).to.equal(4);
+    });
+
+    it("[deprecated] should set the offset to the given bigint (> current)", () => {
+      const coder = args.createCoder(5, 2);
+      expect(coder.offset).to.equal(2);
+      coder.seek(4n);
+      expect(coder.offset).to.equal(4);
+    });
+
+    it("should not change the offset when given the current offset number", () => {
+      const coder = args.createCoder(5, 2);
+      expect(coder.offset).to.equal(2);
+      coder.seek(2);
+      expect(coder.offset).to.equal(2);
+    });
+
+    it("[deprecated] should not change the offset when given the current offset bigint", () => {
+      const coder = args.createCoder(5, 2);
+      expect(coder.offset).to.equal(2);
+      coder.seek(2n);
+      expect(coder.offset).to.equal(2);
+    });
+  });
+
+  describe("#setEndianness()", () => {
+    // TODO:
+  });
+
+  describe("#skip()", () => {
+    it("should advance the offset by the given number", () => {
+      const coder = args.createCoder(5);
+      expect(coder.offset).to.equal(0);
+      coder.skip(2);
+      expect(coder.offset).to.equal(2);
+      coder.skip(2);
+      expect(coder.offset).to.equal(4);
+    });
+
+    it("[deprecated] should advance the offset by the given bigint", () => {
+      const coder = args.createCoder(5);
+      expect(coder.offset).to.equal(0);
+      coder.skip(2n);
+      expect(coder.offset).to.equal(2);
+      coder.skip(2n);
+      expect(coder.offset).to.equal(4);
+    });
+  });
+
+  describe("#withEndianness()", () => {
+    // TODO:
+  });
+
+  describe("#withOffset()", () => {
+    // TODO:
+  });
+
+  //#endregion
+
+  //#region Deprecated Methods
+
+  describe("[deprecated]#isEOF()", () => {
+    it("should return false at offset < 0", () => {
+      const coder = args.createCoder(5, -1);
+      expect(coder.isEOF()).to.be.false;
+    });
+
+    it("should return false at offset within range of buffer", () => {
+      const coder = args.createCoder(5, 2);
+      expect(coder.isEOF()).to.be.false;
+    });
+
+    it("should return false at offset of final byte of buffer", () => {
+      const coder = args.createCoder(5, 4);
+      expect(coder.isEOF()).to.be.false;
+    });
+
+    it("should return true at offset of buffer length", () => {
+      const coder = args.createCoder(5, 5);
+      expect(coder.isEOF()).to.be.true;
+    });
+
+    it("should return true at offset beyond buffer length", () => {
+      const coder = args.createCoder(5, 6);
+      expect(coder.isEOF()).to.be.true;
+    });
+  });
+
+  describe("[deprecated]#savePos()", () => {
     it("should execute the given function", () => {
       const coder = args.createCoder(5);
       let fnRun = false;
@@ -190,41 +308,7 @@ export function describeBinaryCoderMethods(args: BinaryCoderMethodArgs) {
     });
   });
 
-  describe("#seek()", () => {
-    it("should set the offset to the given number (< current)", () => {
-      const coder = args.createCoder(5, 4);
-      expect(coder.offset).to.equal(4);
-      coder.seek(2)
-      expect(coder.offset).to.equal(2);
-    });
-
-    it("should set the offset to the given number (> current)", () => {
-      const coder = args.createCoder(5, 2);
-      expect(coder.offset).to.equal(2);
-      coder.seek(4)
-      expect(coder.offset).to.equal(4);
-    });
-
-    it("should not change the offset when given the current offset", () => {
-      const coder = args.createCoder(5, 2);
-      expect(coder.offset).to.equal(2);
-      coder.seek(2)
-      expect(coder.offset).to.equal(2);
-    });
-  });
-
-  describe("#skip()", () => {
-    it("should advance the offset by the given number", () => {
-      const coder = args.createCoder(5);
-      expect(coder.offset).to.equal(0);
-      coder.skip(2)
-      expect(coder.offset).to.equal(2);
-      coder.skip(2)
-      expect(coder.offset).to.equal(4);
-    });
-  });
-
-  describe("#tell()", () => {
+  describe("[deprecated]#tell()", () => {
     it("should return the given offset", () => {
       const coder = args.createCoder(5);
       expect(coder.tell()).to.equal(0);
@@ -234,4 +318,6 @@ export function describeBinaryCoderMethods(args: BinaryCoderMethodArgs) {
       expect(coder.tell()).to.equal(3);
     });
   });
+
+  //#endregion
 }

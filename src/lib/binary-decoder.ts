@@ -48,7 +48,7 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * @param num Number of bytes to read
    * @returns The characters read
    */
-  charsUtf8(num: number): string {
+  charsUtf8(num: number): string { // TODO: deprecate
     return this._chars(num, "utf-8");
   }
 
@@ -58,7 +58,7 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * @param num Number of bytes to read
    * @returns The characters read
    */
-  charsBase64(num: number): string {
+  charsBase64(num: number): string { // TODO: deprecate
     return this._chars(num, "base64");
   }
 
@@ -68,13 +68,15 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * 
    * @returns The string read
    */
-  string(): string {
-    const start = this.tell();
+  string(): string { // TODO: add encoding option
+    const start = this.offset;
     let nextByte = this.byte();
     if (!nextByte) return "";
     while (nextByte) nextByte = this.byte();
     return this.buffer.toString("utf8", start, this.offset - 1);
   }
+
+  // TODO: chars with arbitrary encoding
 
   //#endregion Text / Encoded Bytes
 
