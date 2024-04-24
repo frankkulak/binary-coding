@@ -153,7 +153,7 @@ export default abstract class BinaryCoderBase {
    * @deprecated Passing bigints is no longer supported
    * @param offset The value to set the offset to
    */
-  seek(offset: bigint): void;
+  seek(offset: number | bigint): void;
   seek(offset: number | bigint) {
     this._offset = Number(offset);
   }
@@ -181,7 +181,7 @@ export default abstract class BinaryCoderBase {
    * @param bytes The number of bytes to skip
    * @returns The new offset after skipping bytes
    */
-  skip(bytes: bigint): number;
+  skip(bytes: number | bigint): number;
   skip(bytes: number | bigint): number {
     return this._offset += Number(bytes);
   }
