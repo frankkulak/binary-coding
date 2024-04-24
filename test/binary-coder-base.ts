@@ -6,23 +6,97 @@ export function describeBinaryCoderMethods(args: BinaryCoderMethodArgs) {
   //#region Properties
 
   describe("#byteLength", () => {
-    // TODO:
+    it("should be the length of the contained buffer", () => {
+      const coder = args.createCoder(5);
+      expect(coder.byteLength).to.equal(5);
+    });
   });
 
   describe("#bytesRemaining", () => {
-    // TODO:
+    it("should be the length of the buffer at the start", () => {
+      const coder = args.createCoder(5);
+      expect(coder.bytesRemaining).to.equal(5);
+    });
+
+    it("should be the length of the buffer minus the offset", () => {
+      const coder = args.createCoder(5, 2);
+      expect(coder.bytesRemaining).to.equal(3);
+    });
+
+    it("should be 0 at the end", () => {
+      const coder = args.createCoder(5, 5);
+      expect(coder.bytesRemaining).to.equal(0);
+    });
   });
 
   describe("#endianness", () => {
-    // TODO:
+    it("should be the current endianness (LE)", () => {
+      const coder = args.createCoder(5, 0, "LE");
+      expect(coder.endianness).to.equal("LE");
+    });
+
+    it("should be the current endianness (BE)", () => {
+      const coder = args.createCoder(5, 0, "BE");
+      expect(coder.endianness).to.equal("BE");
+    });
+
+    it("should throw upon setting", () => {
+      const coder = args.createCoder(5);
+      //@ts-expect-error endianness is not settable on purpose
+      expect(() => coder.endianness = "BE").to.throw();
+    });
   });
 
   describe("#isOutOfBounds", () => {
-    // TODO:
+    it("should be true when offset < 0", () => {
+      const coder = args.createCoder(5, -1);
+      expect(coder.isOutOfBounds).to.be.true;
+    });
+
+    it("should be true when offset = 0 and Buffer is empty", () => {
+      const coder = args.createCoder(0, 0);
+      expect(coder.isOutOfBounds).to.be.true;
+    });
+
+    it("should be false when offset = 0 and buffer is not empty", () => {
+      const coder = args.createCoder(5, 0);
+      expect(coder.isOutOfBounds).to.be.false;
+    });
+
+    it("should be false when offset > 0 and < buffer length - 1", () => {
+      const coder = args.createCoder(5, 1);
+      expect(coder.isOutOfBounds).to.be.false;
+      coder.seek(3);
+      expect(coder.isOutOfBounds).to.be.false;
+    });
+
+    it("should be false when offset = buffer length - 1", () => {
+      const coder = args.createCoder(5, 4);
+      expect(coder.isOutOfBounds).to.be.false;
+    });
+
+    it("should be true when offset = buffer length", () => {
+      const coder = args.createCoder(5, 5);
+      expect(coder.isOutOfBounds).to.be.true;
+    });
+
+    it("should be true when offset > buffer length", () => {
+      const coder = args.createCoder(5, 6);
+      expect(coder.isOutOfBounds).to.be.true;
+    });
   });
 
   describe("#offset", () => {
-    // TODO:
+    it("should be the current offset", () => {
+      const coder = args.createCoder(5, 3);
+      expect(coder.offset).to.equal(3);
+    });
+
+    it("should throw upon setting", () => {
+      const coder = args.createCoder(5);
+      //@ts-expect-error offset is not settable on purpose
+      expect(() => coder.offset = 3).to.throw();
+    });
   });
 
   //#endregion
@@ -119,7 +193,79 @@ export function describeBinaryCoderMethods(args: BinaryCoderMethodArgs) {
   });
 
   describe("#hasClearance()", () => {
-    // TODO:
+    context("offset supplied", () => {
+      it("should return false if offset < 0", () => {
+        const coder = args.createCoder(5);
+        expect(coder.hasClearance(1, -1)).to.be.false;
+      });
+
+      it("should return false if offset > byte length", () => {
+        const coder = args.createCoder(5);
+        expect(coder.hasClearance(1, 6)).to.be.false;
+      });
+
+      it("should return true if offset + bytes < byte length - 1", () => {
+        const coder = args.createCoder(5);
+        expect(coder.hasClearance(1, 1)).to.be.true;
+      });
+
+      it("should return true if offset + bytes == byte length - 1", () => {
+        const coder = args.createCoder(5);
+        expect(coder.hasClearance(2, 2)).to.be.true;
+      });
+
+      it("should return true if offset + bytes == byte length", () => {
+        const coder = args.createCoder(5);
+        expect(coder.hasClearance(2, 3)).to.be.true;
+      });
+
+      it("should return false if offset + bytes == byte length + 1", () => {
+        const coder = args.createCoder(5);
+        expect(coder.hasClearance(3, 3)).to.be.false;
+      });
+
+      it("should return false if offset + bytes > byte length + 1", () => {
+        const coder = args.createCoder(5);
+        expect(coder.hasClearance(4, 3)).to.be.false;
+      });
+    });
+
+    context("offset omitted", () => {
+      it("should return false if offset < 0", () => {
+        const coder = args.createCoder(5, -1);
+        expect(coder.hasClearance(1)).to.be.false;
+      });
+
+      it("should return false if offset > byte length", () => {
+        const coder = args.createCoder(5, 6);
+        expect(coder.hasClearance(1)).to.be.false;
+      });
+
+      it("should return true if offset + bytes < byte length - 1", () => {
+        const coder = args.createCoder(5, 1);
+        expect(coder.hasClearance(1)).to.be.true;
+      });
+
+      it("should return true if offset + bytes == byte length - 1", () => {
+        const coder = args.createCoder(5, 2);
+        expect(coder.hasClearance(2)).to.be.true;
+      });
+
+      it("should return true if offset + bytes == byte length", () => {
+        const coder = args.createCoder(5, 3);
+        expect(coder.hasClearance(2)).to.be.true;
+      });
+
+      it("should return false if offset + bytes == byte length + 1", () => {
+        const coder = args.createCoder(5, 3);
+        expect(coder.hasClearance(3)).to.be.false;
+      });
+
+      it("should return false if offset + bytes > byte length + 1", () => {
+        const coder = args.createCoder(5, 3);
+        expect(coder.hasClearance(4)).to.be.false;
+      });
+    });
   });
 
   describe("#iterate()", () => {
@@ -165,11 +311,56 @@ export function describeBinaryCoderMethods(args: BinaryCoderMethodArgs) {
   });
 
   describe("#saveEndianness()", () => {
-    // TODO:
+    it("should execute the given function", () => {
+      const coder = args.createCoder(5);
+      let fnRun = false;
+      coder.saveEndianness(() => {
+        fnRun = true;
+      });
+      expect(fnRun).to.be.true;
+    });
+
+    it("should not change the endianness when the function runs", () => {
+      const coder = args.createCoder(5, 0, "LE");
+      coder.saveEndianness(() => {
+        expect(coder.endianness).to.equal("LE");
+      });
+    });
+
+    it("should reset the endianness to what it was after the function runs", () => {
+      const coder = args.createCoder(5, 0, "LE");
+      coder.saveEndianness(() => {
+        coder.setEndianness("BE");
+      });
+      expect(coder.endianness).to.equal("LE");
+    });
   });
 
   describe("#saveOffset()", () => {
-    // TODO:
+    it("should execute the given function", () => {
+      const coder = args.createCoder(5);
+      let fnRun = false;
+      coder.saveOffset(() => {
+        fnRun = true;
+      });
+      expect(fnRun).to.be.true;
+    });
+
+    it("should not change the offset before the function runs", () => {
+      const coder = args.createCoder(5, 2);
+      coder.saveOffset(() => {
+        expect(coder.offset).to.equal(2);
+      });
+    });
+
+    it("should reset the offset to where it was after the function runs", () => {
+      const coder = args.createCoder(5, 2);
+      coder.saveOffset(() => {
+        coder.byte(0);
+        expect(coder.offset).to.equal(3);
+      });
+      expect(coder.offset).to.equal(2);
+    });
   });
 
   describe("#seek()", () => {
@@ -217,7 +408,17 @@ export function describeBinaryCoderMethods(args: BinaryCoderMethodArgs) {
   });
 
   describe("#setEndianness()", () => {
-    // TODO:
+    it("should update the endianness (LE)", () => {
+      const coder = args.createCoder(5, 0, "BE");
+      coder.setEndianness("LE");
+      expect(coder.endianness).to.equal("LE");
+    });
+
+    it("should update the endianness (BE)", () => {
+      const coder = args.createCoder(5, 0, "LE");
+      coder.setEndianness("BE");
+      expect(coder.endianness).to.equal("BE");
+    });
   });
 
   describe("#skip()", () => {
@@ -241,11 +442,55 @@ export function describeBinaryCoderMethods(args: BinaryCoderMethodArgs) {
   });
 
   describe("#withEndianness()", () => {
-    // TODO:
+    it("should execute the given function", () => {
+      const coder = args.createCoder(5);
+      let fnRun = false;
+      coder.withEndianness("BE", () => {
+        fnRun = true;
+      });
+      expect(fnRun).to.be.true;
+    });
+
+    it("should change the endianness to the given value before the function runs", () => {
+      const coder = args.createCoder(5, 0, "LE");
+      coder.withEndianness("BE", () => {
+        expect(coder.endianness).to.equal("BE");
+      });
+    });
+
+    it("should reset the endianness to what it was after the function runs", () => {
+      const coder = args.createCoder(5, 0, "LE");
+      coder.withEndianness("BE", () => {
+        // intentionally blank
+      });
+      expect(coder.endianness).to.equal("LE");
+    });
   });
 
   describe("#withOffset()", () => {
-    // TODO:
+    it("should execute the given function", () => {
+      const coder = args.createCoder(5);
+      let fnRun = false;
+      coder.withOffset(2, () => {
+        fnRun = true;
+      });
+      expect(fnRun).to.be.true;
+    });
+
+    it("should change the offset to the given value before the function runs", () => {
+      const coder = args.createCoder(5);
+      coder.withOffset(2, () => {
+        expect(coder.offset).to.equal(2);
+      });
+    });
+
+    it("should reset the offset to where it was after the function runs", () => {
+      const coder = args.createCoder(5);
+      coder.withOffset(2, () => {
+        // intentionally blank
+      });
+      expect(coder.offset).to.equal(0);
+    });
   });
 
   //#endregion
