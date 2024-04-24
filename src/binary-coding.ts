@@ -58,6 +58,8 @@ type EndianResolvableType =
  * A base class for classes that encode/decode binary files.
  */
 abstract class BinaryCoderBase {
+  //#region Properties
+
   protected readonly _buffer: Buffer;
   protected _endianness: Endianness;
   protected _offset: number;
@@ -69,6 +71,10 @@ abstract class BinaryCoderBase {
   /** The offset this coder is currently pointing to. */
   get offset(): number { return this._offset; }
 
+  //#endregion
+
+  //#region Initialization
+
   protected constructor(
     buffer: Buffer,
     initialOffset: number = 0,
@@ -78,6 +84,10 @@ abstract class BinaryCoderBase {
     this._offset = initialOffset;
     this._endianness = endianness;
   }
+
+  //#endregion
+
+  //#region Methods
 
   /**
    * Returns a new BinaryDecoder using this object's buffer.
@@ -113,6 +123,21 @@ abstract class BinaryCoderBase {
    */
   isEOF(): boolean {
     return this._offset >= this._buffer.length;
+  }
+
+  /**
+   * Calls the given function `n` times, appending its result to a list after
+   * each iteration, and returning the resulting list.
+   * 
+   * @param n Number of iterations / length of resulting list.
+   * @param fn Function to call on each iteration / to populate each list item.
+   * @returns List containing the results of calling `fn()` `n` times.
+   */
+  iterate<T>(n: number, fn: (i: number) => T): T[] {
+    if (n < 0) throw new Error(`Cannot iterate less than 0 times.`);
+    const list: T[] = [];
+    for (let i = 0; i < n; ++i) list.push(fn(i));
+    return list;
   }
 
   /**
@@ -167,6 +192,8 @@ abstract class BinaryCoderBase {
   protected _resolveEndian<T extends EndianResolvableType>(le: T, be: T): T {
     return this._endianness === "LE" ? le : be;
   }
+
+  //#endregion
 }
 
 /**
@@ -174,6 +201,8 @@ abstract class BinaryCoderBase {
  * which is incremented every time a value is read.
  */
 export class BinaryDecoder extends BinaryCoderBase {
+  //#region Initialization
+
   /**
    * Creates a new BinaryDecoder that can read the given buffer.
    * 
@@ -188,6 +217,8 @@ export class BinaryDecoder extends BinaryCoderBase {
   ) {
     super(buffer, initialOffset, endianness);
   }
+
+  //#endregion
 
   //#region Text / Encoded Bytes
 
@@ -436,6 +467,8 @@ export class BinaryDecoder extends BinaryCoderBase {
  * which is incremented every time a value is written.
  */
 export class BinaryEncoder extends BinaryCoderBase {
+  //#region Initialization
+
   /**
    * Creates a new BinaryEncoder that can write to the given buffer.
    * 
@@ -465,6 +498,8 @@ export class BinaryEncoder extends BinaryCoderBase {
   ): BinaryEncoder {
     return new BinaryEncoder(Buffer.alloc(size), initialOffset, endianness);
   }
+
+  //#endregion
 
   //#region Text / Encoded Bytes
 

@@ -119,6 +119,48 @@ export function describeBinaryCoderMethods(args: BinaryCoderMethodArgs) {
     });
   });
 
+  describe("#iterate()", () => {
+    it("should iterate n times", () => {
+      const coder = args.createCoder(5);
+      let iters = 0;
+      coder.iterate(3, () => {
+        ++iters;
+      });
+      expect(iters).to.equal(3);
+    });
+
+    it("should not iterate if n is 0", () => {
+      const coder = args.createCoder(5);
+      let iters = 0;
+      coder.iterate(0, () => {
+        ++iters;
+      });
+      expect(iters).to.equal(0);
+    });
+
+    it("should throw if n is negative", () => {
+      const coder = args.createCoder(5);
+      expect(() => coder.iterate(-1, () => { })).to.throw();
+    });
+
+    it("should pass the index to each function call", () => {
+      const coder = args.createCoder(5);
+      let index = 0;
+      coder.iterate(3, (i) => {
+        expect(i).to.equal(index);
+        ++index;
+      });
+    });
+
+    it("should return a list containing result of each iteration", () => {
+      const coder = args.createCoder(5);
+      const list = coder.iterate(3, (i) => i);
+      expect(list).to.be.an("Array")
+        .with.lengthOf(3)
+        .and.deep.equals([0, 1, 2]);
+    });
+  });
+
   describe("#savePos()", () => {
     it("should execute the given function", () => {
       const coder = args.createCoder(5);
