@@ -51,6 +51,18 @@ function testNumberMethod(args: NumberMethodArgs<BinaryEncoder>) {
     const encoder = BinaryEncoder.alloc(args.bytes - 1);
     expect(() => encoder[args.name].call(encoder, args.value)).to.throw();
   });
+
+  it("should support dynamic sizing in calls to withDynamicSize()", () => {
+    BinaryEncoder.withDynamicSize({
+      chunkSize: 1,
+      initialOffset: 1,
+      builder(encoder) {
+        expect(encoder.byteLength).to.equal(1);
+        encoder[args.name].call(encoder, args.value);
+        expect(encoder.byteLength).to.equal(args.bytes + 1);
+      }
+    });
+  });
 }
 
 //#endregion
@@ -170,6 +182,17 @@ describe("BinaryEncoder", () => {
       const encoder = BinaryEncoder.alloc(3);
       expect(() => encoder.chars("test")).to.throw();
     });
+
+    it("should support dynamic sizing in calls to withDynamicSize()", () => {
+      BinaryEncoder.withDynamicSize({
+        chunkSize: 2,
+        builder(encoder) {
+          expect(encoder.byteLength).to.equal(2);
+          encoder.chars("ABC");
+          expect(encoder.byteLength).to.equal(4);
+        }
+      });
+    });
   });
 
   describe("#terminatedString()", () => {
@@ -212,6 +235,18 @@ describe("BinaryEncoder", () => {
           const encoder = BinaryEncoder.alloc(4);
           expect(() => encoder.terminatedString("test")).to.throw();
         });
+
+        it("should support dynamic sizing in calls to withDynamicSize()", () => {
+          BinaryEncoder.withDynamicSize({
+            chunkSize: 2,
+            builder(encoder) {
+              expect(encoder.byteLength).to.equal(2);
+              encoder.chars("test", encoding);
+              const expectedByteLength = byteLength % 2 ? byteLength + 1 : byteLength;
+              expect(encoder.byteLength).to.equal(expectedByteLength);
+            }
+          });
+        });
       });
     });
   });
@@ -238,6 +273,17 @@ describe("BinaryEncoder", () => {
     it("should throw if going beyond buffer length", () => {
       const encoder = BinaryEncoder.alloc(3);
       expect(() => encoder.charsUtf8("test")).to.throw();
+    });
+
+    it("should support dynamic sizing in calls to withDynamicSize()", () => {
+      BinaryEncoder.withDynamicSize({
+        chunkSize: 2,
+        builder(encoder) {
+          expect(encoder.byteLength).to.equal(2);
+          encoder.charsUtf8("ABC");
+          expect(encoder.byteLength).to.equal(4);
+        }
+      });
     });
   });
 
@@ -267,6 +313,19 @@ describe("BinaryEncoder", () => {
       const bytes = Buffer.byteLength("test", "base64");
       const encoder = BinaryEncoder.alloc(bytes - 1);
       expect(() => encoder.charsBase64("test")).to.throw();
+    });
+
+    it("should support dynamic sizing in calls to withDynamicSize()", () => {
+      BinaryEncoder.withDynamicSize({
+        chunkSize: 2,
+        builder(encoder) {
+          expect(encoder.byteLength).to.equal(2);
+          encoder.charsBase64("test");
+          const bytes = Buffer.byteLength("test", "base64");
+          const expectedByteSize = bytes % 2 ? bytes + 1 : bytes;
+          expect(encoder.byteLength).to.equal(expectedByteSize);
+        }
+      });
     });
   });
 
@@ -302,6 +361,18 @@ describe("BinaryEncoder", () => {
     it("should throw if going beyond buffer length", () => {
       const encoder = BinaryEncoder.alloc(1, 1);
       expect(() => encoder.boolean(true)).to.throw();
+    });
+
+    it("should support dynamic sizing in calls to withDynamicSize()", () => {
+      BinaryEncoder.withDynamicSize({
+        chunkSize: 1,
+        initialOffset: 1,
+        builder(encoder) {
+          expect(encoder.byteLength).to.equal(1);
+          encoder.boolean(true);
+          expect(encoder.byteLength).to.equal(2);
+        }
+      });
     });
   });
 
@@ -344,6 +415,17 @@ describe("BinaryEncoder", () => {
       const encoder = BinaryEncoder.alloc(3);
       expect(() => encoder.bytes([2, 4, 8, 16])).to.throw();
     });
+
+    it("should support dynamic sizing in calls to withDynamicSize()", () => {
+      BinaryEncoder.withDynamicSize({
+        chunkSize: 2,
+        builder(encoder) {
+          expect(encoder.byteLength).to.equal(2);
+          encoder.bytes([1, 2, 3]);
+          expect(encoder.byteLength).to.equal(4);
+        }
+      });
+    });
   });
 
   describe("#null()", () => {
@@ -381,6 +463,17 @@ describe("BinaryEncoder", () => {
       const buffer = Buffer.from([1, 2, 3, 4]);
       const encoder = new BinaryEncoder(buffer);
       expect(() => encoder.null(5)).to.throw();
+    });
+
+    it("should support dynamic sizing in calls to withDynamicSize()", () => {
+      BinaryEncoder.withDynamicSize({
+        chunkSize: 2,
+        builder(encoder) {
+          expect(encoder.byteLength).to.equal(2);
+          encoder.null(3);
+          expect(encoder.byteLength).to.equal(4);
+        }
+      });
     });
   });
 

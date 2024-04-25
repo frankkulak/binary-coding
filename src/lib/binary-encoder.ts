@@ -320,6 +320,8 @@ export default class BinaryEncoder extends BinaryCoderBase {
       throw new Error("Recursive calls to enable dynamic sizing are not allowed.");
     const fn = possibleFn ?? fnOrChunkSize as () => void;
     const chunkSize = possibleFn ? fnOrChunkSize as number : _DEFAULT_CHUNK_SIZE;
+    if (!(Number.isInteger(chunkSize) && chunkSize > 0))
+      throw new Error("Chunk size must be a positive integer.");
     this._dynamicSizing = true;
     this._dynamicChunkSize = chunkSize;
     this._dynamicBufferCropSize = this.byteLength;
@@ -334,7 +336,8 @@ export default class BinaryEncoder extends BinaryCoderBase {
   private _resizeIfDynamic(bytes: number) {
     if (!this._dynamicSizing || this.hasClearance(bytes)) return;
     let bytesToAdd = 0;
-    do { bytesToAdd += this._dynamicChunkSize; } while (bytesToAdd < bytes);
+    do { bytesToAdd += this._dynamicChunkSize; }
+    while (this.offset + bytes > this.byteLength + bytesToAdd);
     this.buffer = Buffer.concat([this.buffer, Buffer.alloc(bytesToAdd)]);
   }
 
