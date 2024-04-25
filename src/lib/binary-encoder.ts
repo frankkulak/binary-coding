@@ -1,11 +1,30 @@
 import BinaryCoderBase from "./binary-coder-base";
 import type { BufferWriteBigIntMethod, BufferWriteNumberMethod, Endianness } from "./types";
 
+const _DEFAULT_CHUNK_SIZE = 256;
+
+type DynamicSizeBuilder = (encoder: BinaryEncoder) => void;
+
+interface DynamicSizeBuilderWithOptions {
+  initialOffset?: number;
+  endianness?: Endianness;
+  chunkSize?: number;
+  builder: DynamicSizeBuilder;
+}
+
 /**
  * A class for encoding binary files. The encoder keeps track of an offset,
  * which is incremented every time a value is written.
  */
 export default class BinaryEncoder extends BinaryCoderBase {
+  //#region Properties
+
+  private _dynamicSizing = false;
+  private _dynamicChunkSize = _DEFAULT_CHUNK_SIZE;
+  private _dynamicBufferCropSize = 0;
+
+  //#endregion
+
   //#region Initialization
 
   /**
@@ -38,6 +57,20 @@ export default class BinaryEncoder extends BinaryCoderBase {
     return new BinaryEncoder(Buffer.alloc(size), initialOffset, endianness);
   }
 
+  // TODO: docs
+  static withDynamicSize(builder: DynamicSizeBuilder): BinaryEncoder;
+  static withDynamicSize(options: DynamicSizeBuilderWithOptions): BinaryEncoder;
+  static withDynamicSize(builderOrOptions: DynamicSizeBuilder | DynamicSizeBuilderWithOptions): BinaryEncoder {
+    const options = typeof builderOrOptions === "function" ? null : builderOrOptions;
+    const offset = options?.initialOffset ?? 0;
+    const endianness = options?.endianness ?? "LE";
+    const chunkSize = options?.chunkSize ?? _DEFAULT_CHUNK_SIZE;
+    const builder = options?.builder ?? builderOrOptions as DynamicSizeBuilder;
+    const encoder = BinaryEncoder.alloc(chunkSize, offset, endianness);
+    encoder.withDynamicSize(chunkSize, () => builder(encoder));
+    return encoder;
+  }
+
   //#endregion
 
   //#region Text / Encoded Bytes
@@ -49,8 +82,10 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * @param encoding Character encoding to write with ("utf-8" by default)
    */
   chars(value: string, encoding: BufferEncoding = "utf-8") {
+    const byteLength = Buffer.byteLength(value, encoding);
+    this._resizeIfDynamic(byteLength);
     // intentionally += because write() returns # bytes written
-    this._offset += this.buffer.write(value, this.offset, Buffer.byteLength(value, encoding), encoding);
+    this.offset += this.buffer.write(value, this.offset, byteLength, encoding);
   }
 
   /**
@@ -116,6 +151,15 @@ export default class BinaryEncoder extends BinaryCoderBase {
     values.forEach((value: number) => this.byte(value));
   }
 
+  /**
+   * Writes the given number of null bytes. If omitted, only one is written.
+   * 
+   * @param bytes Number of null bytes to write
+   */
+  null(bytes: number = 1) {
+    if (bytes > 0) for (let _ = 0; _ < bytes; ++_) this.uint8(0);
+  }
+
   //#endregion Raw Bytes / Buffers
 
   //#region Numbers
@@ -126,9 +170,10 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * @param value The number to write
    * @param methodName The method to write the number with
    */
-  private _number(value: number, methodName: BufferWriteNumberMethod) {
+  private _number(bytes: number, value: number, methodName: BufferWriteNumberMethod) {
+    this._resizeIfDynamic(bytes);
     // intentionally = because all number methods return current offset + # bytes written
-    this._offset = this.buffer[methodName](value, this.offset);
+    this.offset = this.buffer[methodName](value, this.offset);
   }
 
   /**
@@ -138,8 +183,9 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * @param methodName The method to write the bigint with
    */
   private _bigint(value: bigint, methodName: BufferWriteBigIntMethod) {
+    this._resizeIfDynamic(8);
     // intentionally = because all number methods return current offset + # bytes written
-    this._offset = this.buffer[methodName](value, this.offset);
+    this.offset = this.buffer[methodName](value, this.offset);
   }
 
   /**
@@ -148,7 +194,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * @param value The uint8 to write
    */
   uint8(value: number) {
-    this._number(value, "writeUInt8");
+    this._number(1, value, "writeUInt8");
   }
 
   /**
@@ -158,6 +204,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    */
   uint16(value: number) {
     this._number(
+      2,
       value,
       this._resolveEndian("writeUInt16LE", "writeUInt16BE")
     );
@@ -170,6 +217,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    */
   uint32(value: number) {
     this._number(
+      4,
       value,
       this._resolveEndian("writeUInt32LE", "writeUInt32BE")
     );
@@ -193,7 +241,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * @param value The int8 to write
    */
   int8(value: number) {
-    this._number(value, "writeInt8");
+    this._number(1, value, "writeInt8");
   }
 
   /**
@@ -203,6 +251,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    */
   int16(value: number) {
     this._number(
+      2,
       value,
       this._resolveEndian("writeInt16LE", "writeInt16BE")
     );
@@ -215,6 +264,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    */
   int32(value: number) {
     this._number(
+      4,
       value,
       this._resolveEndian("writeInt32LE", "writeInt32BE")
     );
@@ -239,6 +289,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    */
   float(value: number) {
     this._number(
+      4,
       value,
       this._resolveEndian("writeFloatLE", "writeFloatBE")
     );
@@ -251,10 +302,46 @@ export default class BinaryEncoder extends BinaryCoderBase {
    */
   double(value: number) {
     this._number(
+      8,
       value,
       this._resolveEndian("writeDoubleLE", "writeDoubleBE")
     );
   }
 
   //#endregion Numbers
+
+  //#region Dynamic Sizing
+
+  // TODO: docs
+  withDynamicSize(fn: () => void): void;
+  withDynamicSize(chunkSize: number, fn: () => void): void;
+  withDynamicSize(fnOrChunkSize: number | (() => void), possibleFn?: () => void) {
+    if (this._dynamicSizing)
+      throw new Error("Recursive calls to enable dynamic sizing are not allowed.");
+    const fn = possibleFn ?? fnOrChunkSize as () => void;
+    const chunkSize = possibleFn ? fnOrChunkSize as number : _DEFAULT_CHUNK_SIZE;
+    this._dynamicSizing = true;
+    this._dynamicChunkSize = chunkSize;
+    this._dynamicBufferCropSize = this.byteLength;
+    fn();
+    this._dynamicSizing = false;
+    if (this._dynamicBufferCropSize < this.byteLength)
+      this.buffer = this.buffer.slice(0, this._dynamicBufferCropSize);
+    if (this.offset < 0) this.offset = 0;
+    else if (this.offset > this.byteLength) this.offset = this.byteLength;
+  }
+
+  private _resizeIfDynamic(bytes: number) {
+    if (!this._dynamicSizing || this.hasClearance(bytes)) return;
+    let bytesToAdd = 0;
+    do { bytesToAdd += this._dynamicChunkSize; } while (bytesToAdd < bytes);
+    this.buffer = Buffer.concat([this.buffer, Buffer.alloc(bytesToAdd)]);
+  }
+
+  protected _onOffsetChanged(oldValue: number, newValue: number): void {
+    if (newValue > this._dynamicBufferCropSize)
+      this._dynamicBufferCropSize = newValue;
+  }
+
+  //#endregion
 }

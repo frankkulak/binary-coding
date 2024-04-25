@@ -39,12 +39,6 @@ export function describeBinaryCoderMethods(args: BinaryCoderMethodArgs) {
       const coder = args.createCoder(5, 0, "BE");
       expect(coder.endianness).to.equal("BE");
     });
-
-    it("should throw upon setting", () => {
-      const coder = args.createCoder(5);
-      //@ts-expect-error endianness is not settable on purpose
-      expect(() => coder.endianness = "BE").to.throw();
-    });
   });
 
   describe("#isOutOfBounds", () => {
@@ -90,12 +84,6 @@ export function describeBinaryCoderMethods(args: BinaryCoderMethodArgs) {
     it("should be the current offset", () => {
       const coder = args.createCoder(5, 3);
       expect(coder.offset).to.equal(3);
-    });
-
-    it("should throw upon setting", () => {
-      const coder = args.createCoder(5);
-      //@ts-expect-error offset is not settable on purpose
-      expect(() => coder.offset = 3).to.throw();
     });
   });
 

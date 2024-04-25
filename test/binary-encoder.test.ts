@@ -102,7 +102,7 @@ describe("BinaryEncoder", () => {
     });
   });
 
-  describe("#alloc()", () => {
+  describe("static#alloc()", () => {
     it("should create a buffer with the given length", () => {
       const encoder = BinaryEncoder.alloc(12);
       expect(encoder.buffer.byteLength).to.equal(12);
@@ -132,6 +132,10 @@ describe("BinaryEncoder", () => {
       const encoder = BinaryEncoder.alloc(5);
       expect(encoder.endianness).to.equal("LE");
     });
+  });
+
+  describe("static#withDynamicSize()", () => {
+    // TODO:
   });
 
   //#endregion
@@ -342,6 +346,44 @@ describe("BinaryEncoder", () => {
     });
   });
 
+  describe("#null()", () => {
+    it("should write the number of given null bytes", () => {
+      const buffer = Buffer.from([1, 2, 3, 4]);
+      const encoder = new BinaryEncoder(buffer);
+      expect([...buffer]).to.deep.equal([1, 2, 3, 4]);
+      encoder.null(3);
+      expect([...buffer]).to.deep.equal([0, 0, 0, 4]);
+    });
+
+    it("should advance the offset by the number given", () => {
+      const buffer = Buffer.from([1, 2, 3, 4]);
+      const encoder = new BinaryEncoder(buffer);
+      encoder.null(3);
+      expect(encoder.offset).to.equal(3);
+    });
+
+    it("should write one null byte if arg omitted", () => {
+      const buffer = Buffer.from([1, 2, 3, 4]);
+      const encoder = new BinaryEncoder(buffer);
+      expect([...buffer]).to.deep.equal([1, 2, 3, 4]);
+      encoder.null();
+      expect([...buffer]).to.deep.equal([0, 2, 3, 4]);
+    });
+
+    it("should advance the offset by 1 if arg omitted", () => {
+      const buffer = Buffer.from([1, 2, 3, 4]);
+      const encoder = new BinaryEncoder(buffer);
+      encoder.null();
+      expect(encoder.offset).to.equal(1);
+    });
+
+    it("should throw if going beyond buffer length", () => {
+      const buffer = Buffer.from([1, 2, 3, 4]);
+      const encoder = new BinaryEncoder(buffer);
+      expect(() => encoder.null(5)).to.throw();
+    });
+  });
+
   //#endregion
 
   //#region Numbers
@@ -452,6 +494,17 @@ describe("BinaryEncoder", () => {
       isSigned: true,
       value: 1234.5678
     });
+  });
+
+  //#endregion
+
+  //#region Dynamic Sizing
+
+  // TODO: also test that writing methods do NOT dynamically resize the buffer
+  // without using withDynamicSize()
+
+  describe("#withDynamicSize()", () => {
+    // TODO:
   });
 
   //#endregion

@@ -22,21 +22,34 @@ export function setImplementations(impls: {
 export default abstract class BinaryCoderBase {
   //#region Properties
 
+  private _buffer: Buffer;
+  private _endianness: Endianness;
+  private _offset: number;
+
   /** Buffer being read/written. */
-  public readonly buffer: Buffer;
-  protected _endianness: Endianness;
-  protected _offset: number;
+  get buffer(): Buffer { return this._buffer; }
+  protected set buffer(value: Buffer) { this._buffer = value; }
 
   /** Total byte length of buffer. */
   get byteLength(): number { return this.buffer.length; }
+
   /** Number of bytes between current offset and end of buffer. */
   get bytesRemaining(): number { return this.byteLength - this.offset; }
+
   /** Endianness currently being used to read/write data. */
   get endianness(): Endianness { return this._endianness; }
+
   /** Whether current offset is out of the buffer's bounds. */
   get isOutOfBounds(): boolean { return this.offset < 0 || this.offset >= this.byteLength; }
+
   /** Offset where data is currently being read/written. */
   get offset(): number { return this._offset; }
+  protected set offset(value: number) {
+    const oldValue = this._offset;
+    this._offset = value;
+    if (oldValue !== value)
+      this._onOffsetChanged(oldValue, value);
+  }
 
   //#endregion
 
@@ -52,9 +65,11 @@ export default abstract class BinaryCoderBase {
     initialOffset: number = 0,
     endianness: Endianness = "LE"
   ) {
-    this.buffer = buffer;
+    this._buffer = buffer;
     this._offset = initialOffset;
     this._endianness = endianness;
+    if (this._offset !== 0)
+      this._onOffsetChanged(0, this._offset);
   }
 
   //#endregion
@@ -107,7 +122,7 @@ export default abstract class BinaryCoderBase {
    * @returns List containing the results of calling `fn()` `n` times
    */
   iterate<T>(n: number, fn: (i: number) => T): T[] {
-    if (n < 0) throw new Error(`Cannot iterate less than 0 times.`);
+    if (n < 0) throw new RangeError(`Cannot iterate less than 0 times.`);
     const list: T[] = [];
     for (let i = 0; i < n; ++i) list.push(fn(i));
     return list;
@@ -146,7 +161,7 @@ export default abstract class BinaryCoderBase {
   saveOffset<T>(fn: () => T): T {
     const offset = this.offset;
     const result = fn();
-    this._offset = offset;
+    this.offset = offset;
     return result;
   }
 
@@ -164,7 +179,7 @@ export default abstract class BinaryCoderBase {
    */
   seek(offset: number | bigint): void;
   seek(offset: number | bigint) {
-    this._offset = Number(offset);
+    this.offset = Number(offset);
   }
 
   /**
@@ -192,7 +207,7 @@ export default abstract class BinaryCoderBase {
    */
   skip(bytes: number | bigint): number;
   skip(bytes: number | bigint): number {
-    return this._offset += Number(bytes);
+    return this.offset += Number(bytes);
   }
 
   /**
@@ -221,9 +236,9 @@ export default abstract class BinaryCoderBase {
    */
   withOffset<T>(offset: number, fn: () => T): T {
     const originalOffset = this.offset;
-    this._offset = offset;
+    this.offset = offset;
     const result = fn();
-    this._offset = originalOffset;
+    this.offset = originalOffset;
     return result;
   }
 
@@ -267,6 +282,10 @@ export default abstract class BinaryCoderBase {
   //#endregion
 
   //#region Protected Methods
+
+  protected _onOffsetChanged(oldValue: number, newValue: number): void {
+    // intentionally blank; intended to be overridden as needed
+  }
 
   protected _resolveEndian<T extends EndianResolvableType>(le: T, be: T): T {
     return this.endianness === "LE" ? le : be;
