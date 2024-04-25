@@ -593,11 +593,180 @@ describe("BinaryEncoder", () => {
 
   //#region Dynamic Sizing
 
-  // TODO: also test that writing methods do NOT dynamically resize the buffer
-  // without using withDynamicSize()
-
   describe("#withDynamicSize()", () => {
-    // TODO:
+    context("argument handling", () => {
+      it("should use the provided chunk size", () => {
+        // TODO:
+      });
+
+      it("should use a chunk size of 256 if not provided", () => {
+        // TODO:
+      });
+
+      it("should throw when chunk size is a float", () => {
+        // TODO:
+      });
+
+      it("should throw when chunk size is 0", () => {
+        // TODO:
+      });
+
+      it("should throw when chunk size is negative", () => {
+        // TODO:
+      });
+    });
+
+    context("before function execution", () => {
+      it("should throw if dynamic resizing is already enabled", () => {
+        // TODO:
+      });
+
+      it("should not change the buffer size initially", () => {
+        // TODO:
+      });
+
+      it("should not change the offset initially", () => {
+        // TODO:
+      });
+    });
+
+    context("dynamic resizing", () => {
+      context("seeking offset", () => {
+        it("should not resize when seeking beyond byte length", () => {
+          // TODO:
+        });
+
+        it("should not resize when seeking beyond, seeking back, and writing", () => {
+          // TODO:
+        });
+      });
+
+      context("data can fit in current buffer", () => {
+        it("should not resize when writing up to 2+ bytes before end", () => {
+          // TODO:
+        });
+
+        it("should not resize when writing up to 1 byte before end", () => {
+          // TODO:
+        });
+
+        it("should not resize when writing up to last byte", () => {
+          // TODO:
+        });
+      });
+
+      context("data cannot fit in current buffer", () => {
+        it("should resize by 1 chunk when writing 1 byte past end", () => {
+          // TODO:
+        });
+
+        it("should resize by 1 chunk when data requires chunk size - 1 byte", () => {
+          // TODO:
+        });
+
+        it("should resize by 1 chunk when data requires chunk size", () => {
+          // TODO:
+        });
+
+        it("should resize by 2 chunks when data requires chunk size + 1 byte", () => {
+          // TODO:
+        });
+
+        it("should resize by 2 chunks when data requires 2x chunk size - 1 byte", () => {
+          // TODO:
+        });
+
+        it("should resize by 2 chunks when data requires 2x chunk size", () => {
+          // TODO:
+        });
+
+        it("should resize by 3 chunks when data requires 2x chunk size + 1 byte", () => {
+          // TODO:
+        });
+      });
+    });
+
+    context("after function execution", () => {
+      it("should disable dynamic resizing", () => {
+        // TODO:
+      });
+
+      it("should not permanantly alter the default chunk size", () => {
+        // TODO:
+      });
+
+      it("should not permanantly alter the crop size", () => {
+        // TODO:
+      });
+
+      it("should contain all of the data that was written", () => {
+        // TODO:
+      });
+
+      context("offset of furthest written byte == available byte length", () => {
+        context("offset < byte length", () => {
+          it("should not crop the buffer", () => {
+            // TODO:
+          });
+
+          it("should not change the offset", () => {
+            // TODO:
+          });
+        });
+
+        context("offset == byte length", () => {
+          it("should not crop the buffer", () => {
+            // TODO:
+          });
+
+          it("should not change the offset", () => {
+            // TODO:
+          });
+        });
+
+        context("offset > byte length", () => {
+          it("should not crop the buffer", () => {
+            // TODO:
+          });
+
+          it("should set the offset to the byte length", () => {
+            // TODO:
+          });
+        });
+      });
+
+      context("offset of furthest written byte < available byte length", () => {
+        context("offset is < offset of furthest written byte", () => {
+          it("should crop the buffer to the furthest written byte", () => {
+            // TODO:
+          });
+
+          it("should not change the offset", () => {
+            // TODO:
+          });
+        });
+
+        context("offset is == offset of furthest written byte", () => {
+          it("should crop the buffer to the furthest written byte", () => {
+            // TODO:
+          });
+
+          it("should not change the offset", () => {
+            // TODO:
+          });
+        });
+
+        context("offset is > offset of furthest written byte", () => {
+          it("should crop the buffer to the furthest written byte", () => {
+            // TODO:
+          });
+
+          it("should set the offset to the offset of the furthest written byte", () => {
+            // TODO:
+          });
+        });
+      });
+    });
   });
 
   //#endregion
