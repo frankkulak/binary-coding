@@ -97,7 +97,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    */
   terminatedString(value: string, encoding: BufferEncoding = "utf-8") {
     this.chars(value, encoding);
-    this.byte(0); // null byte
+    this.null();
   }
 
   /**
@@ -327,23 +327,22 @@ export default class BinaryEncoder extends BinaryCoderBase {
     this._dynamicBufferCropSize = this.byteLength;
     fn();
     this._dynamicSizing = false;
+    this._dynamicChunkSize = _DEFAULT_CHUNK_SIZE;
     if (this._dynamicBufferCropSize < this.byteLength)
       this.buffer = this.buffer.slice(0, this._dynamicBufferCropSize);
-    if (this.offset < 0) this.offset = 0;
-    else if (this.offset > this.byteLength) this.offset = this.byteLength;
+    this._dynamicBufferCropSize = 0;
   }
 
   private _resizeIfDynamic(bytes: number) {
-    if (!this._dynamicSizing || this.hasClearance(bytes)) return;
+    if (!this._dynamicSizing) return;
+    const writeEnd = this.offset + bytes;
+    if (writeEnd > this._dynamicBufferCropSize)
+      this._dynamicBufferCropSize = writeEnd;
+    if (this.hasClearance(bytes)) return;
     let bytesToAdd = 0;
     do { bytesToAdd += this._dynamicChunkSize; }
     while (this.offset + bytes > this.byteLength + bytesToAdd);
     this.buffer = Buffer.concat([this.buffer, Buffer.alloc(bytesToAdd)]);
-  }
-
-  protected _onOffsetChanged(oldValue: number, newValue: number): void {
-    if (newValue > this._dynamicBufferCropSize)
-      this._dynamicBufferCropSize = newValue;
   }
 
   //#endregion

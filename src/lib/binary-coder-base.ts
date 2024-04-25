@@ -44,12 +44,7 @@ export default abstract class BinaryCoderBase {
 
   /** Offset where data is currently being read/written. */
   get offset(): number { return this._offset; }
-  protected set offset(value: number) {
-    const oldValue = this._offset;
-    this._offset = value;
-    if (oldValue !== value)
-      this._onOffsetChanged(oldValue, value);
-  }
+  protected set offset(value: number) { this._offset = value; }
 
   //#endregion
 
@@ -68,8 +63,6 @@ export default abstract class BinaryCoderBase {
     this._buffer = buffer;
     this._offset = initialOffset;
     this._endianness = endianness;
-    if (this._offset !== 0)
-      this._onOffsetChanged(0, this._offset);
   }
 
   //#endregion
@@ -282,10 +275,6 @@ export default abstract class BinaryCoderBase {
   //#endregion
 
   //#region Protected Methods
-
-  protected _onOffsetChanged(oldValue: number, newValue: number): void {
-    // intentionally blank; intended to be overridden as needed
-  }
 
   protected _resolveEndian<T extends EndianResolvableType>(le: T, be: T): T {
     return this.endianness === "LE" ? le : be;
