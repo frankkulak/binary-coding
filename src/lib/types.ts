@@ -1,3 +1,4 @@
+/** Types of endianness (big or little). */
 export type Endianness = "BE" | "LE";
 
 export type BufferReadNumberMethod =

@@ -2,18 +2,17 @@ import BinaryCoderBase from "./binary-coder-base";
 import type { BufferReadBigIntMethod, BufferReadNumberMethod, Endianness } from "./types";
 
 /**
- * A class for decoding binary files. The decoder keeps track of an offset,
- * which is incremented every time a value is read.
+ * Decodes binary data from a buffer.
  */
 export default class BinaryDecoder extends BinaryCoderBase {
   //#region Initialization
 
   /**
-   * Creates a new BinaryDecoder that can read the given buffer.
+   * Creates a new {@link BinaryDecoder} that can read the given buffer.
    * 
-   * @param buffer Buffer to decode
-   * @param initialOffset Initial offset to use. 0 by default.
-   * @param endianness Endianness to use(little endian by default)
+   * @param buffer Buffer to decode.
+   * @param initialOffset Initial offset to use (0 by default).
+   * @param endianness Endianness to use (little endian by default).
    */
   constructor(
     buffer: Buffer,
@@ -30,9 +29,9 @@ export default class BinaryDecoder extends BinaryCoderBase {
   /**
    * Reads the given number of bytes as a string with the given encoding.
    * 
-   * @param bytes Number of bytes to read
-   * @param encoding Character encoding to parse with ("utf-8" by default)
-   * @returns String parsed with given encoding
+   * @param bytes Number of bytes to read.
+   * @param encoding Character encoding to parse with ("utf-8" by default).
+   * @returns String parsed with given encoding.
    */
   chars(bytes: number, encoding: BufferEncoding = "utf-8"): string {
     if (!this.hasClearance(bytes))
@@ -48,8 +47,8 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * given encoding, and returns the result. The offset will be advanced by the
    * byte length + 1 (for the null byte).
    * 
-   * @param encoding Character encoding to parse with ("utf-8" by default)
-   * @returns String parsed with given encoding
+   * @param encoding Character encoding to parse with ("utf-8" by default).
+   * @returns String parsed with given encoding.
    */
   terminatedString(encoding: BufferEncoding = "utf-8"): string {
     const start = this.offset;
@@ -62,9 +61,9 @@ export default class BinaryDecoder extends BinaryCoderBase {
   /**
    * Reads the given number of bytes as a string of UTF-8 characters.
    * 
-   * @deprecated Use `chars()` instead
-   * @param bytes Number of bytes to read
-   * @returns The characters read as a string with UTF-8 encoding
+   * @deprecated Use {@link chars} instead.
+   * @param bytes Number of bytes to read.
+   * @returns The characters read as a string with UTF-8 encoding.
    */
   charsUtf8(bytes: number): string {
     return this.chars(bytes, "utf-8");
@@ -73,9 +72,9 @@ export default class BinaryDecoder extends BinaryCoderBase {
   /**
    * Reads the given number of bytes as a string of Base64 characters.
    * 
-   * @deprecated Use `chars()` instead (add "base64" as second argument)
-   * @param bytes Number of bytes to read
-   * @returns The characters read as a string with Base64 encoding
+   * @deprecated Use {@link chars} instead (use "base64" as second argument).
+   * @param bytes Number of bytes to read.
+   * @returns The characters read as a string with Base64 encoding.
    */
   charsBase64(bytes: number): string {
     return this.chars(bytes, "base64");
@@ -86,8 +85,8 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * encoding, and returns the result. The offset will be advanced by the byte
    * length + 1 (for the null byte).
    * 
-   * @deprecated Use `terminatedString()` instead
-   * @returns The string read with UTF-8 encoding
+   * @deprecated Use {@link terminatedString} instead.
+   * @returns The string read with UTF-8 encoding.
    */
   string(): string {
     return this.terminatedString("utf-8");
@@ -100,26 +99,26 @@ export default class BinaryDecoder extends BinaryCoderBase {
   /**
    * Reads the next byte as a boolean (0 is false, anything else is true).
    * 
-   * @returns The boolean value of the next byte
+   * @returns The boolean value of the next byte.
    */
   boolean(): boolean {
     return this.byte() !== 0;
   }
 
   /**
-   * Reads a single byte. This is an alias for `uint8()`.
+   * Reads a single byte as a UInt8 (alias of {@link uint8}).
    * 
-   * @returns A single byte value
+   * @returns A single byte value.
    */
   byte(): number {
     return this.uint8();
   }
 
   /**
-   * Reads the given number of raw bytes.
+   * Reads the given number of bytes as UInt8s.
    * 
-   * @param num The number of bytes to read
-   * @returns An array of bytes
+   * @param num The number of bytes to read.
+   * @returns An array of bytes.
    */
   bytes(num: number): number[] {
     const bytes = [];
@@ -130,14 +129,25 @@ export default class BinaryDecoder extends BinaryCoderBase {
   /**
    * Slices a sub-buffer of the given size starting at the current offset.
    * 
-   * @param size Size of the sub-buffer to slice
-   * @returns The sliced buffer
+   * @deprecated Use {@link subarray} instead.
+   * @param size Size of the sub-buffer to slice.
+   * @returns The sliced buffer.
    */
   slice(size: number): Buffer {
+    return this.subarray(size);
+  }
+
+  /**
+   * Reads the given number of bytes into a subarray buffer.
+   * 
+   * @param size Number of bytes to read into subarray.
+   * @returns Buffer containing read bytes.
+   */
+  subarray(size: number): Buffer {
     if (!this.hasClearance(size))
-      throw new RangeError("Cannot slice buffer beyond bounds.");
+      throw new RangeError("Cannot read a subarray beyond bounds.");
     const end = this.offset + size;
-    const slice = this.buffer.slice(this.offset, end);
+    const slice = this.buffer.subarray(this.offset, end);
     this.seek(end);
     return slice;
   }
@@ -146,25 +156,12 @@ export default class BinaryDecoder extends BinaryCoderBase {
 
   //#region Numbers
 
-  /**
-   * Reads a number using the given Buffer method.
-   * 
-   * @param methodName The method to call on the buffer
-   * @param numBytes The number of bytes to advance the offset by
-   * @returns The read number
-   */
   private _number(methodName: BufferReadNumberMethod, numBytes: number): number {
     const result = this.buffer[methodName](this.offset);
     this.skip(numBytes);
     return result;
   }
 
-  /**
-   * Reads a bigint using the given Buffer method.
-   * 
-   * @param methodName The method to call on the buffer
-   * @returns The read bigint
-   */
   private _bigint(methodName: BufferReadBigIntMethod): bigint {
     const result = this.buffer[methodName](this.offset);
     this.skip(8);
@@ -172,18 +169,18 @@ export default class BinaryDecoder extends BinaryCoderBase {
   }
 
   /**
-   * Reads an 8-bit unsigned integer.
+   * Reads an 8-bit unsigned integer. Consumes 1 byte.
    * 
-   * @returns The read uint8
+   * @returns The read UInt8.
    */
   uint8(): number {
     return this._number("readUInt8", 1);
   }
 
   /**
-   * Reads a 16-bit unsigned integer.
+   * Reads a 16-bit unsigned integer. Consumes 2 bytes.
    * 
-   * @returns The read uint16
+   * @returns The read UInt16.
    */
   uint16(): number {
     return this._number(
@@ -193,9 +190,9 @@ export default class BinaryDecoder extends BinaryCoderBase {
   }
 
   /**
-   * Reads a 32-bit unsigned integer.
+   * Reads a 32-bit unsigned integer. Consumes 4 bytes.
    * 
-   * @returns The read uint32
+   * @returns The read UInt32.
    */
   uint32(): number {
     return this._number(
@@ -205,9 +202,9 @@ export default class BinaryDecoder extends BinaryCoderBase {
   }
 
   /**
-   * Reads a 64-bit unsigned integer.
+   * Reads a 64-bit unsigned integer. Consumes 8 bytes.
    * 
-   * @returns The read uint64
+   * @returns The read UInt64.
    */
   uint64(): bigint {
     return this._bigint(
@@ -216,18 +213,18 @@ export default class BinaryDecoder extends BinaryCoderBase {
   }
 
   /**
-   * Reads an 8-bit signed integer.
+   * Reads an 8-bit signed integer. Consumes 1 byte.
    * 
-   * @returns The read int8
+   * @returns The read Int8.
    */
   int8(): number {
     return this._number("readInt8", 1);
   }
 
   /**
-   * Reads a 16-bit signed integer.
+   * Reads a 16-bit signed integer. Consumes 2 bytes.
    * 
-   * @returns The read int16
+   * @returns The read Int16.
    */
   int16(): number {
     return this._number(
@@ -237,9 +234,9 @@ export default class BinaryDecoder extends BinaryCoderBase {
   }
 
   /**
-   * Reads a 32-bit signed integer.
+   * Reads a 32-bit signed integer. Consumes 4 bytes.
    * 
-   * @returns The read int32
+   * @returns The read Int32.
    */
   int32(): number {
     return this._number(
@@ -249,9 +246,9 @@ export default class BinaryDecoder extends BinaryCoderBase {
   }
 
   /**
-   * Reads a 64-bit signed integer.
+   * Reads a 64-bit signed integer. Consumes 8 bytes.
    * 
-   * @returns The read int64
+   * @returns The read Int64.
    */
   int64(): bigint {
     return this._bigint(
@@ -260,9 +257,9 @@ export default class BinaryDecoder extends BinaryCoderBase {
   }
 
   /**
-   * Reads a float.
+   * Reads a float. Consumes 4 bytes.
    * 
-   * @returns The read float
+   * @returns The read float.
    */
   float(): number {
     return this._number(
@@ -272,9 +269,9 @@ export default class BinaryDecoder extends BinaryCoderBase {
   }
 
   /**
-   * Reads a double.
+   * Reads a double. Consumes 8 bytes.
    * 
-   * @returns The read double
+   * @returns The read double.
    */
   double(): number {
     return this._number(

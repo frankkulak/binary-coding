@@ -17,7 +17,7 @@ export function setImplementations(impls: {
 //#endregion
 
 /**
- * Base class for classes that encode/decode binary files.
+ * Base class for reading/writing binary data.
  */
 export default abstract class BinaryCoderBase {
   //#region Properties
@@ -43,16 +43,15 @@ export default abstract class BinaryCoderBase {
 
   /** Offset where data is currently being read/written. */
   get offset(): number { return this._offset; }
-  protected set offset(value: number) { this._offset = value; }
 
   //#endregion
 
   //#region Initialization
 
   /**
-   * @param buffer Buffer to read/write
-   * @param initialOffset Initial offset to use (0 by default)
-   * @param endianness Endianness to use (little endian by default)
+   * @param buffer Buffer to read/write.
+   * @param initialOffset Initial offset to use (0 by default).
+   * @param endianness Endianness to use (little endian by default).
    */
   protected constructor(
     buffer: Buffer,
@@ -69,22 +68,22 @@ export default abstract class BinaryCoderBase {
   //#region Methods
 
   /**
-   * Returns a new BinaryDecoder using this coder's buffer.
+   * Returns a new {@link BinaryDecoder} using this coder's buffer.
    * 
-   * @param initialOffset Initial offset to use (0 by default)
-   * @param endianness Endianness to use (little endian by default)
-   * @returns New BinaryDecoder for this coder's buffer
+   * @param initialOffset Initial offset to use (0 by default).
+   * @param endianness Endianness to use (little endian by default).
+   * @returns New decoder for this coder's buffer.
    */
   getDecoder(initialOffset: number = 0, endianness: Endianness = "LE"): BinaryDecoder {
     return new DECODER_CLS(this.buffer, initialOffset, endianness);
   }
 
   /**
-   * Returns a new BinaryEncoder using this coder's buffer.
+   * Returns a new {@link BinaryEncoder} using this coder's buffer.
    * 
-   * @param initialOffset Initial offset to use (0 by default)
-   * @param endianness Endianness to use (little endian by default)
-   * @returns New BinaryEncoder for this coder's buffer
+   * @param initialOffset Initial offset to use (0 by default).
+   * @param endianness Endianness to use (little endian by default).
+   * @returns New encoder for this coder's buffer.
    */
   getEncoder(initialOffset: number = 0, endianness: Endianness = "LE"): BinaryEncoder {
     return new ENCODER_CLS(this.buffer, initialOffset, endianness);
@@ -94,9 +93,9 @@ export default abstract class BinaryCoderBase {
    * Returns whether this coder can safely consume the given number of bytes
    * from the given offset (or the current offset if omitted).
    * 
-   * @param bytes Number of bytes to check
-   * @param fromOffset Offset to check from, if different than current one
-   * @returns True if these bytes can be safely consumed, false otherwise
+   * @param bytes Number of bytes to check.
+   * @param fromOffset Offset to check from, if different than current one.
+   * @returns True if these bytes can be safely consumed, false otherwise.
    */
   hasClearance(bytes: number, fromOffset?: number): boolean {
     const offset = fromOffset ?? this.offset;
@@ -108,9 +107,9 @@ export default abstract class BinaryCoderBase {
    * Calls the given function `n` times, appending its result to a list after
    * each iteration, and returning the resulting list.
    * 
-   * @param n Number of iterations / length of resulting list
-   * @param fn Function to call on each iteration / to populate each list item
-   * @returns List containing the results of calling `fn()` `n` times
+   * @param n Number of iterations / length of resulting list.
+   * @param fn Function to call on each iteration / to populate each list item.
+   * @returns List containing the results of calling `fn()` `n` times.
    */
   iterate<T>(n: number, fn: (i: number) => T): T[] {
     if (n < 0) throw new RangeError(`Cannot iterate less than 0 times.`);
@@ -122,7 +121,7 @@ export default abstract class BinaryCoderBase {
   /**
    * Returns the byte at the current offset, without advancing the offset.
    * 
-   * @returns Byte at the current offset
+   * @returns Byte at the current offset.
    */
   peek(): number {
     return this.buffer.at(this.offset);
@@ -132,8 +131,8 @@ export default abstract class BinaryCoderBase {
    * Saves the value of the current endianness, runs the given function, and
    * then restores the endianness to the initial saved value.
    * 
-   * @param fn Function to call
-   * @returns Result of the given function call
+   * @param fn Function to call.
+   * @returns Result of the given function call.
    */
   saveEndianness<T>(fn: () => T): T {
     const endianness = this.endianness;
@@ -146,37 +145,37 @@ export default abstract class BinaryCoderBase {
    * Saves the value of the current offset, runs the given function, and then
    * restores the offset to the initial saved value.
    * 
-   * @param fn Function to call
-   * @returns Result of the given function call
+   * @param fn Function to call.
+   * @returns Result of the given function call.
    */
   saveOffset<T>(fn: () => T): T {
     const offset = this.offset;
     const result = fn();
-    this.offset = offset;
+    this._offset = offset;
     return result;
   }
 
   /**
    * Moves the offset to a specific byte.
    * 
-   * @param offset The value to set the offset to
+   * @param offset The value to set the offset to.
    */
   seek(offset: number): void;
   /**
    * Moves the offset to a specific byte.
    * 
-   * @deprecated Passing bigints is no longer supported
-   * @param offset The value to set the offset to
+   * @deprecated Passing bigints is no longer supported.
+   * @param offset The value to set the offset to.
    */
   seek(offset: number | bigint): void;
   seek(offset: number | bigint) {
-    this.offset = Number(offset);
+    this._offset = Number(offset);
   }
 
   /**
    * Sets the endianness to use for reading/writing.
    * 
-   * @param endianness Endianness to use
+   * @param endianness Endianness to use.
    */
   setEndianness(endianness: Endianness) {
     this._endianness = endianness;
@@ -185,29 +184,29 @@ export default abstract class BinaryCoderBase {
   /**
    * Advances the offset by the given number of bytes.
    *
-   * @param bytes The number of bytes to skip
-   * @returns The new offset after skipping bytes
+   * @param bytes The number of bytes to skip.
+   * @returns The new offset after skipping bytes.
    */
   skip(bytes: number): number;
   /**
    * Advances the offset by the given number of bytes.
    * 
-   * @deprecated Passing bigints is no longer supported
-   * @param bytes The number of bytes to skip
-   * @returns The new offset after skipping bytes
+   * @deprecated Passing bigints is no longer supported.
+   * @param bytes The number of bytes to skip.
+   * @returns The new offset after skipping bytes.
    */
   skip(bytes: number | bigint): number;
   skip(bytes: number | bigint): number {
-    return this.offset += Number(bytes);
+    return this._offset += Number(bytes);
   }
 
   /**
    * Temporarily sets the endianness to the given value, calls the given
    * function, and then restores the original endianness.
    * 
-   * @param endianness Endianness to use in scope of function
-   * @param fn Function to call
-   * @returns Result of the given function call
+   * @param endianness Endianness to use in scope of function.
+   * @param fn Function to call.
+   * @returns Result of the given function call.
    */
   withEndianness<T>(endianness: Endianness, fn: () => T): T {
     const originalEndianness = this.endianness;
@@ -221,15 +220,15 @@ export default abstract class BinaryCoderBase {
    * Temporarily sets the offset to the given value, calls the given function,
    * and then restores the original offset.
    * 
-   * @param offset Offset to use in scope of function
-   * @param fn Function to call
-   * @returns Result of the given function call
+   * @param offset Offset to use in scope of function.
+   * @param fn Function to call.
+   * @returns Result of the given function call.
    */
   withOffset<T>(offset: number, fn: () => T): T {
     const originalOffset = this.offset;
-    this.offset = offset;
+    this._offset = offset;
     const result = fn();
-    this.offset = originalOffset;
+    this._offset = originalOffset;
     return result;
   }
 
@@ -243,8 +242,8 @@ export default abstract class BinaryCoderBase {
    * Returns whether or not the offset is at the end of the file (i.e. reading
    * anything will cause an exception).
    * 
-   * @deprecated Use `isOutOfBounds` getter instead
-   * @returns True if offset is at EOF, false otherwise
+   * @deprecated Use {@link isOutOfBounds} getter instead.
+   * @returns True if offset is at EOF, false otherwise.
    */
   isEOF(): boolean {
     return this.offset >= this.buffer.length;
@@ -253,8 +252,8 @@ export default abstract class BinaryCoderBase {
   /**
    * Preserves the original offset after calling the given function.
    * 
-   * @deprecated Use `saveOffset()` method instead
-   * @param fn Function to call
+   * @deprecated Use {@link saveOffset} method instead.
+   * @param fn Function to call.
    */
   savePos<T>(fn: () => T): T {
     return this.saveOffset(fn);
@@ -263,8 +262,8 @@ export default abstract class BinaryCoderBase {
   /**
    * Returns the current offset.
    * 
-   * @deprecated Use `offset` getter instead
-   * @returns The current offset
+   * @deprecated Use {@link offset} getter instead.
+   * @returns The current offset.
    */
   tell(): number {
     return this.offset;
@@ -285,6 +284,11 @@ export default abstract class BinaryCoderBase {
 
   protected _resolveEndian<T extends EndianResolvableType>(le: T, be: T): T {
     return this.endianness === "LE" ? le : be;
+  }
+
+  protected _setOffset(value: number) {
+    // intentionally not using setter because typedoc makes it look public
+    this._offset = value;
   }
 
   //#endregion

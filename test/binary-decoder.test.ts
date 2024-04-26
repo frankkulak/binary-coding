@@ -337,8 +337,8 @@ describe("BinaryDecoder", () => {
     });
   });
 
-  describe("#slice()", () => {
-    it("should read a sub-buffer of the given length", () => {
+  describe("#slice() - [deprecated]", () => {
+    it("should read a subarray of the given length", () => {
       const decoder = new BinaryDecoder(Buffer.from([2, 4, 8, 16]));
       const subbuffer = decoder.slice(2);
       expect(subbuffer).to.be.an.instanceOf(Buffer).with.lengthOf(2);
@@ -361,6 +361,33 @@ describe("BinaryDecoder", () => {
     it("should throw if going beyond buffer length", () => {
       const decoder = new BinaryDecoder(Buffer.from([2, 4, 8, 16]));
       expect(() => decoder.slice(5)).to.throw();
+    });
+  });
+
+  describe("#subarray()", () => {
+    it("should read a subarray of the given length", () => {
+      const decoder = new BinaryDecoder(Buffer.from([2, 4, 8, 16]));
+      const subbuffer = decoder.subarray(2);
+      expect(subbuffer).to.be.an.instanceOf(Buffer).with.lengthOf(2);
+      expect([...subbuffer]).to.deep.equal([2, 4]);
+    });
+
+    it("should read from the current offset", () => {
+      const decoder = new BinaryDecoder(Buffer.from([0, 0, 2, 4, 8]), 2);
+      const subbuffer = decoder.subarray(2);
+      expect(subbuffer).to.be.an.instanceOf(Buffer).with.lengthOf(2);
+      expect([...subbuffer]).to.deep.equal([2, 4]);
+    });
+
+    it("should advance the offset by the given byte length", () => {
+      const decoder = new BinaryDecoder(Buffer.from([2, 4, 8, 16]));
+      decoder.subarray(2);
+      expect(decoder.offset).to.equal(2);
+    });
+
+    it("should throw if going beyond buffer length", () => {
+      const decoder = new BinaryDecoder(Buffer.from([2, 4, 8, 16]));
+      expect(() => decoder.subarray(5)).to.throw();
     });
   });
 
