@@ -878,7 +878,7 @@ describe("BinaryEncoder", () => {
             const encoder = BinaryEncoder.alloc(4);
             encoder.withDynamicSize(() => {
               encoder.uint32(5);
-              encoder.skip(2)
+              encoder.skip(2);
               expect(encoder.byteLength).to.equal(4);
             });
             expect(encoder.byteLength).to.equal(4);
@@ -888,7 +888,7 @@ describe("BinaryEncoder", () => {
             const encoder = BinaryEncoder.alloc(4);
             encoder.withDynamicSize(() => {
               encoder.uint32(5);
-              encoder.skip(2)
+              encoder.skip(2);
               expect(encoder.offset).to.equal(6);
             });
             expect(encoder.offset).to.equal(4);
@@ -898,6 +898,28 @@ describe("BinaryEncoder", () => {
 
       context("offset of furthest written byte < available byte length", () => {
         context("offset is < offset of furthest written byte", () => {
+          it("should crop the buffer to the furthest written byte", () => {
+            const encoder = BinaryEncoder.alloc(0);
+            encoder.withDynamicSize(8, () => {
+              encoder.uint32(5);
+              encoder.seek(2);
+              expect(encoder.byteLength).to.equal(8);
+            });
+            expect(encoder.byteLength).to.equal(4);
+          });
+
+          it("should not change the offset", () => {
+            const encoder = BinaryEncoder.alloc(0);
+            encoder.withDynamicSize(8, () => {
+              encoder.uint32(5);
+              encoder.seek(2);
+              expect(encoder.offset).to.equal(2);
+            });
+            expect(encoder.offset).to.equal(2);
+          });
+        });
+
+        context("offset is == offset of furthest written byte", () => {
           it("should crop the buffer to the furthest written byte", () => {
             const encoder = BinaryEncoder.alloc(0);
             encoder.withDynamicSize(8, () => {
@@ -917,34 +939,12 @@ describe("BinaryEncoder", () => {
           });
         });
 
-        context("offset is == offset of furthest written byte", () => {
-          it("should crop the buffer to the furthest written byte", () => {
-            const encoder = BinaryEncoder.alloc(0);
-            encoder.withDynamicSize(8, () => {
-              encoder.uint32(5);
-              encoder.skip(4);
-              expect(encoder.byteLength).to.equal(8);
-            });
-            expect(encoder.byteLength).to.equal(4);
-          });
-
-          it("should not change the offset", () => {
-            const encoder = BinaryEncoder.alloc(0);
-            encoder.withDynamicSize(8, () => {
-              encoder.uint32(5);
-              encoder.skip(4);
-              expect(encoder.offset).to.equal(8);
-            });
-            expect(encoder.offset).to.equal(8);
-          });
-        });
-
         context("offset is > offset of furthest written byte", () => {
           it("should crop the buffer to the furthest written byte", () => {
             const encoder = BinaryEncoder.alloc(0);
             encoder.withDynamicSize(8, () => {
               encoder.uint32(5);
-              encoder.skip(8);
+              encoder.skip(2);
               expect(encoder.byteLength).to.equal(8);
             });
             expect(encoder.byteLength).to.equal(4);
@@ -954,10 +954,10 @@ describe("BinaryEncoder", () => {
             const encoder = BinaryEncoder.alloc(0);
             encoder.withDynamicSize(8, () => {
               encoder.uint32(5);
-              encoder.skip(8);
-              expect(encoder.offset).to.equal(12);
+              encoder.skip(2);
+              expect(encoder.offset).to.equal(6);
             });
-            expect(encoder.offset).to.equal(8);
+            expect(encoder.offset).to.equal(4);
           });
         });
       });
