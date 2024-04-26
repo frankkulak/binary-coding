@@ -1,4 +1,4 @@
-import type { BinaryEncoder, BinaryDecoder, Endianness } from "../dst/binary-coding";
+import type { BinaryEncoder, BinaryDecoder, Endianness } from "../dst/index";
 
 type MethodNames<T> = {
   [K in keyof T]: T[K] extends (...args: any[]) => any ? K : never;

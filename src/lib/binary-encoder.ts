@@ -4,10 +4,10 @@ import type { BufferWriteBigIntMethod, BufferWriteNumberMethod, Endianness } fro
 const _DEFAULT_CHUNK_SIZE = 256;
 
 /** Function that builds an encoder in a dynamic resizing context. */
-type DynamicSizeBuilder = (encoder: BinaryEncoder) => void;
+export type DynamicSizeBuilder = (encoder: BinaryEncoder) => void;
 
 /** Options for static `BinaryEncoder.withDynamicSize()` method. */
-interface DynamicSizeBuilderWithOptions {
+export interface DynamicSizeBuilderWithOptions {
   /** If provided, the resulting encoder will have at least this many bytes */
   minimumSize?: number;
   /** Initial offset to use in the encoder (0 by default) */
@@ -38,6 +38,12 @@ export default class BinaryEncoder extends BinaryCoderBase {
 
   /**
    * Creates a new BinaryEncoder that can write to the given buffer.
+   * 
+   * Static initializers are also available:
+   * - {@link BinaryEncoder.alloc}: Create a {@link BinaryEncoder} with a byte
+   *   size, rather than a buffer.
+   * - {@link BinaryEncoder.withDynamicSize}: Create a {@link BinaryEncoder}
+   *   whose byte size grows as needed.
    * 
    * @param buffer Buffer to encode
    * @param initialOffset Initial offset to use (0 by default)
@@ -350,6 +356,10 @@ export default class BinaryEncoder extends BinaryCoderBase {
   //#endregion Numbers
 
   //#region Dynamic Sizing
+
+  // TODO: method to increase size by n bytes
+
+  // TODO: method to increase size for clearance
 
   /**
    * Runs a function in which the encoder's size will dynamically grow in order

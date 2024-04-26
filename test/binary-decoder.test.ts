@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { BinaryDecoder, Endianness } from "../dst/binary-coding";
+import { BinaryDecoder, Endianness } from "../dst/index";
 import { describeBinaryCoderMethods } from "./binary-coder-base";
 import type { NumberMethodArgs } from "./types";
 

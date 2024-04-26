@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { BinaryEncoder, BinaryDecoder } from "../dst/binary-coding";
+import { BinaryEncoder, BinaryDecoder } from "../dst/index";
 import { BinaryCoderMethodArgs } from "./types";
 
 export function describeBinaryCoderMethods(args: BinaryCoderMethodArgs) {

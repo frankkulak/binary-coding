@@ -1,6 +1,6 @@
 import { setImplementations } from "./lib/binary-coder-base";
 import BinaryDecoder from "./lib/binary-decoder";
-import BinaryEncoder from "./lib/binary-encoder";
+import BinaryEncoder, { DynamicSizeBuilder, DynamicSizeBuilderWithOptions } from "./lib/binary-encoder";
 import { Endianness } from "./lib/types";
 
 setImplementations({
@@ -11,5 +11,7 @@ setImplementations({
 export {
   BinaryDecoder,
   BinaryEncoder,
+  DynamicSizeBuilder,
+  DynamicSizeBuilderWithOptions,
   Endianness
 };
