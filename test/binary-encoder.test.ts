@@ -774,12 +774,16 @@ describe("BinaryEncoder", () => {
         });
       });
 
-      it("should not permanantly alter the crop size", () => {
-        // TODO:
-      });
-
       it("should contain all of the data that was written", () => {
-        // TODO:
+        const encoder = BinaryEncoder.alloc(0);
+        encoder.withDynamicSize(() => {
+          encoder.chars("test");
+          encoder.uint32(5);
+          encoder.boolean(true);
+        });
+        expect(encoder.buffer.toString("utf-8", 0, 4)).to.equal("test");
+        expect(encoder.buffer.readUInt32LE(4)).to.equal(5);
+        expect(encoder.buffer.at(8)).to.equal(1);
       });
 
       it("should not reduce the original size of the buffer, even if it wasn't used", () => {
@@ -790,34 +794,104 @@ describe("BinaryEncoder", () => {
         expect(encoder.byteLength).to.equal(32);
       });
 
+      it("should not replace the buffer instance if never grew or cropped", () => {
+        const originalBuffer = Buffer.alloc(4);
+        const encoder = new BinaryEncoder(originalBuffer);
+        encoder.withDynamicSize(() => {
+          expect(encoder.byteLength).to.equal(4);
+          encoder.uint32(5);
+          expect(encoder.byteLength).to.equal(4); // did not grow
+        });
+        expect(encoder.byteLength).to.equal(4); // did not crop
+        expect(originalBuffer).to.equal(encoder.buffer);
+      });
+
+      it("should replace the buffer instance if grew but not cropped", () => {
+        const originalBuffer = Buffer.alloc(0);
+        const encoder = new BinaryEncoder(originalBuffer);
+        encoder.withDynamicSize(4, () => {
+          expect(encoder.byteLength).to.equal(0);
+          encoder.uint32(5);
+          expect(encoder.byteLength).to.equal(4); // did grow
+        });
+        expect(encoder.byteLength).to.equal(4); // did not crop
+        expect(originalBuffer).to.not.equal(encoder.buffer);
+      });
+
+      it("should replace the buffer instance if grew and cropped", () => {
+        const originalBuffer = Buffer.alloc(0);
+        const encoder = new BinaryEncoder(originalBuffer);
+        encoder.withDynamicSize(4, () => {
+          expect(encoder.byteLength).to.equal(0);
+          encoder.uint16(5);
+          expect(encoder.byteLength).to.equal(4); // did grow
+        });
+        expect(encoder.byteLength).to.equal(2); // did crop
+        expect(originalBuffer).to.not.equal(encoder.buffer);
+      });
+
       context("offset of furthest written byte == available byte length", () => {
         context("offset < byte length", () => {
           it("should not crop the buffer", () => {
-            // TODO:
+            const encoder = BinaryEncoder.alloc(4);
+            encoder.withDynamicSize(() => {
+              encoder.uint32(5);
+              encoder.seek(2)
+              expect(encoder.byteLength).to.equal(4);
+            });
+            expect(encoder.byteLength).to.equal(4);
           });
 
           it("should not change the offset", () => {
-            // TODO:
+            const encoder = BinaryEncoder.alloc(4);
+            encoder.withDynamicSize(() => {
+              encoder.uint32(5);
+              encoder.seek(2)
+              expect(encoder.offset).to.equal(2);
+            });
+            expect(encoder.offset).to.equal(2);
           });
         });
 
         context("offset == byte length", () => {
           it("should not crop the buffer", () => {
-            // TODO:
+            const encoder = BinaryEncoder.alloc(4);
+            encoder.withDynamicSize(() => {
+              encoder.uint32(5);
+              expect(encoder.byteLength).to.equal(4);
+            });
+            expect(encoder.byteLength).to.equal(4);
           });
 
           it("should not change the offset", () => {
-            // TODO:
+            const encoder = BinaryEncoder.alloc(4);
+            encoder.withDynamicSize(() => {
+              encoder.uint32(5);
+              expect(encoder.offset).to.equal(4);
+            });
+            expect(encoder.offset).to.equal(4);
           });
         });
 
         context("offset > byte length", () => {
           it("should not crop the buffer", () => {
-            // TODO:
+            const encoder = BinaryEncoder.alloc(4);
+            encoder.withDynamicSize(() => {
+              encoder.uint32(5);
+              encoder.skip(2)
+              expect(encoder.byteLength).to.equal(4);
+            });
+            expect(encoder.byteLength).to.equal(4);
           });
 
           it("should set the offset to the byte length", () => {
-            // TODO:
+            const encoder = BinaryEncoder.alloc(4);
+            encoder.withDynamicSize(() => {
+              encoder.uint32(5);
+              encoder.skip(2)
+              expect(encoder.offset).to.equal(6);
+            });
+            expect(encoder.offset).to.equal(4);
           });
         });
       });
@@ -825,31 +899,65 @@ describe("BinaryEncoder", () => {
       context("offset of furthest written byte < available byte length", () => {
         context("offset is < offset of furthest written byte", () => {
           it("should crop the buffer to the furthest written byte", () => {
-            // TODO:
+            const encoder = BinaryEncoder.alloc(0);
+            encoder.withDynamicSize(8, () => {
+              encoder.uint32(5);
+              expect(encoder.byteLength).to.equal(8);
+            });
+            expect(encoder.byteLength).to.equal(4);
           });
 
           it("should not change the offset", () => {
-            // TODO:
+            const encoder = BinaryEncoder.alloc(0);
+            encoder.withDynamicSize(8, () => {
+              encoder.uint32(5);
+              expect(encoder.offset).to.equal(4);
+            });
+            expect(encoder.offset).to.equal(4);
           });
         });
 
         context("offset is == offset of furthest written byte", () => {
           it("should crop the buffer to the furthest written byte", () => {
-            // TODO:
+            const encoder = BinaryEncoder.alloc(0);
+            encoder.withDynamicSize(8, () => {
+              encoder.uint32(5);
+              encoder.skip(4);
+              expect(encoder.byteLength).to.equal(8);
+            });
+            expect(encoder.byteLength).to.equal(4);
           });
 
           it("should not change the offset", () => {
-            // TODO:
+            const encoder = BinaryEncoder.alloc(0);
+            encoder.withDynamicSize(8, () => {
+              encoder.uint32(5);
+              encoder.skip(4);
+              expect(encoder.offset).to.equal(8);
+            });
+            expect(encoder.offset).to.equal(8);
           });
         });
 
         context("offset is > offset of furthest written byte", () => {
           it("should crop the buffer to the furthest written byte", () => {
-            // TODO:
+            const encoder = BinaryEncoder.alloc(0);
+            encoder.withDynamicSize(8, () => {
+              encoder.uint32(5);
+              encoder.skip(8);
+              expect(encoder.byteLength).to.equal(8);
+            });
+            expect(encoder.byteLength).to.equal(4);
           });
 
           it("should set the offset to the offset of the furthest written byte", () => {
-            // TODO:
+            const encoder = BinaryEncoder.alloc(0);
+            encoder.withDynamicSize(8, () => {
+              encoder.uint32(5);
+              encoder.skip(8);
+              expect(encoder.offset).to.equal(12);
+            });
+            expect(encoder.offset).to.equal(8);
           });
         });
       });
