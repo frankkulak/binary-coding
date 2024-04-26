@@ -845,11 +845,212 @@ describe("BinaryEncoder", () => {
   //#region Dynamic Sizing
 
   describe("#ensureClearance()", () => {
-    // TODO:
+    it("should use the provided offset", () => {
+      const encoder = BinaryEncoder.alloc(4);
+      const bytesAdded = encoder.ensureClearance(4, 2);
+      expect(bytesAdded).to.equal(2);
+    });
+
+    it("should use the current offset if not provided", () => {
+      const encoder = BinaryEncoder.alloc(4);
+      const bytesAdded = encoder.ensureClearance(4);
+      expect(bytesAdded).to.equal(0);
+    });
+
+    it("should throw if offset not provided and current offset is < 0", () => {
+      const encoder = BinaryEncoder.alloc(4, -1);
+      expect(() => encoder.ensureClearance(4)).to.throw();
+    });
+
+    it("should throw if given offset is < 0", () => {
+      const encoder = BinaryEncoder.alloc(4);
+      expect(() => encoder.ensureClearance(4, -1)).to.throw();
+    });
+
+    it("should throw if given bytes is < 0", () => {
+      const encoder = BinaryEncoder.alloc(4);
+      expect(() => encoder.ensureClearance(-2)).to.throw();
+    });
+
+    it("should create a new buffer object if resized", () => {
+      const encoder = BinaryEncoder.alloc(4);
+      const bufferBefore = encoder.buffer;
+      encoder.ensureClearance(8);
+      const bufferAfter = encoder.buffer;
+      expect(bufferAfter).to.not.equal(bufferBefore);
+    });
+
+    it("should not create a new buffer object if not resized", () => {
+      const encoder = BinaryEncoder.alloc(4);
+      const bufferBefore = encoder.buffer;
+      encoder.ensureClearance(4);
+      const bufferAfter = encoder.buffer;
+      expect(bufferAfter).to.equal(bufferBefore);
+    });
+
+    it("should contain the same data at the same offset as before when resized", () => {
+      const encoder = new BinaryEncoder(Buffer.from([1, 2]));
+      encoder.ensureClearance(4);
+      expect(encoder.buffer.at(0)).to.equal(1);
+      expect(encoder.buffer.at(1)).to.equal(2);
+    });
+
+    it("should add null bytes to the end of the buffer when resized", () => {
+      const encoder = new BinaryEncoder(Buffer.from([1, 2]));
+      encoder.ensureClearance(4);
+      expect(encoder.buffer.at(2)).to.equal(0);
+      expect(encoder.buffer.at(3)).to.equal(0);
+    });
+
+    context("offset is at 0", () => {
+      context("there is clearance for the bytes", () => {
+        it("should not resize the buffer", () => {
+          const encoder = BinaryEncoder.alloc(4);
+          encoder.ensureClearance(4);
+          expect(encoder.byteLength).to.equal(4);
+        });
+
+        it("should return 0", () => {
+          const encoder = BinaryEncoder.alloc(4);
+          const bytesAdded = encoder.ensureClearance(4);
+          expect(bytesAdded).to.equal(0);
+        });
+      });
+
+      context("there is no clearance at all", () => {
+        it("should resize the buffer by the number of bytes", () => {
+          const encoder = BinaryEncoder.alloc(0);
+          encoder.ensureClearance(4);
+          expect(encoder.byteLength).to.equal(4);
+        });
+
+        it("should return the number of bytes added", () => {
+          const encoder = BinaryEncoder.alloc(0);
+          const bytesAdded = encoder.ensureClearance(4);
+          expect(bytesAdded).to.equal(4);
+        });
+      });
+
+      context("there is no clearance for some of the bytes", () => {
+        it("should resize the buffer by the difference", () => {
+          const encoder = BinaryEncoder.alloc(2);
+          encoder.ensureClearance(4);
+          expect(encoder.byteLength).to.equal(4);
+        });
+
+        it("should return the number of bytes added", () => {
+          const encoder = BinaryEncoder.alloc(2);
+          const bytesAdded = encoder.ensureClearance(4);
+          expect(bytesAdded).to.equal(2);
+        });
+      });
+    });
+
+    context("offset is within bounds", () => {
+      context("there is clearance for the bytes", () => {
+        it("should not resize the buffer", () => {
+          const encoder = BinaryEncoder.alloc(4, 2);
+          encoder.ensureClearance(2);
+          expect(encoder.byteLength).to.equal(4);
+        });
+
+        it("should return 0", () => {
+          const encoder = BinaryEncoder.alloc(4, 2);
+          const bytesAdded = encoder.ensureClearance(2);
+          expect(bytesAdded).to.equal(0);
+        });
+      });
+
+      context("there is no clearance at all", () => {
+        it("should resize the buffer by the number of bytes", () => {
+          const encoder = BinaryEncoder.alloc(4, 4);
+          encoder.ensureClearance(2);
+          expect(encoder.byteLength).to.equal(6);
+        });
+
+        it("should return the number of bytes added", () => {
+          const encoder = BinaryEncoder.alloc(4, 4);
+          const bytesAdded = encoder.ensureClearance(2);
+          expect(bytesAdded).to.equal(2);
+        });
+      });
+
+      context("there is no clearance for some of the bytes", () => {
+        it("should resize the buffer by the difference", () => {
+          const encoder = BinaryEncoder.alloc(4, 2);
+          encoder.ensureClearance(4);
+          expect(encoder.byteLength).to.equal(6);
+        });
+
+        it("should return the number of bytes added", () => {
+          const encoder = BinaryEncoder.alloc(4, 2);
+          const bytesAdded = encoder.ensureClearance(4);
+          expect(bytesAdded).to.equal(2);
+        });
+      });
+    });
+
+    context("offset is beyond bounds", () => {
+      it("should resize the buffer to the offset plus the bytes", () => {
+        const encoder = BinaryEncoder.alloc(4, 6);
+        encoder.ensureClearance(2);
+        expect(encoder.byteLength).to.equal(8);
+      });
+
+      it("should return the number of bytes added", () => {
+        const encoder = BinaryEncoder.alloc(4, 6);
+        const bytesAdded = encoder.ensureClearance(2);
+        expect(bytesAdded).to.equal(4);
+      });
+    });
   });
 
   describe("#increaseSize()", () => {
-    // TODO:
+    it("should throw if given number is negative", () => {
+      const encoder = BinaryEncoder.alloc(4);
+      expect(() => encoder.increaseSize(-1)).to.throw();
+    });
+
+    it("should throw if given number is not an integer", () => {
+      const encoder = BinaryEncoder.alloc(4);
+      expect(() => encoder.increaseSize(1.5)).to.throw();
+    });
+
+    it("should add the given number of bytes to the buffer", () => {
+      const encoder = BinaryEncoder.alloc(4);
+      encoder.increaseSize(8);
+      expect(encoder.byteLength).to.equal(12);
+    });
+
+    it("should contain the same data at the same offset as before", () => {
+      const encoder = new BinaryEncoder(Buffer.from([1, 2]));
+      encoder.increaseSize(2);
+      expect(encoder.buffer.at(0)).to.equal(1);
+      expect(encoder.buffer.at(1)).to.equal(2);
+    });
+
+    it("should add null bytes to the end of the buffer", () => {
+      const encoder = new BinaryEncoder(Buffer.from([1, 2]));
+      encoder.increaseSize(2);
+      expect(encoder.buffer.at(2)).to.equal(0);
+      expect(encoder.buffer.at(3)).to.equal(0);
+    });
+
+    it("should create a new buffer object if size > 0", () => {
+      const encoder = BinaryEncoder.alloc(4);
+      const bufferBefore = encoder.buffer;
+      encoder.increaseSize(4);
+      const bufferAfter = encoder.buffer;
+      expect(bufferAfter).to.not.equal(bufferBefore);
+    });
+
+    it("should not create a new buffer object if size == 0", () => {
+      const encoder = BinaryEncoder.alloc(4);
+      const bufferBefore = encoder.buffer;
+      encoder.increaseSize(0);
+      const bufferAfter = encoder.buffer;
+      expect(bufferAfter).to.equal(bufferBefore);
+    });
   });
 
   describe("#withDynamicSize()", () => {

@@ -387,9 +387,10 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * @param bytes Number of bytes to check.
    * @param fromOffset Offset to check from, if different than current one.
    * @returns Number of bytes that were added, if any.
-   * @throws If offset is negative (cannot add bytes to start).
+   * @throws If bytes or offset is negative (cannot add bytes to start).
    */
   ensureClearance(bytes: number, fromOffset?: number): number {
+    if (bytes < 0) throw new RangeError("Cannot add negative bytes.");
     const offset = fromOffset ?? this.offset;
     if (offset < 0) throw new RangeError("Cannot add bytes to start of buffer.");
     const clearance = this.byteLength - offset;
@@ -408,11 +409,11 @@ export default class BinaryEncoder extends BinaryCoderBase {
    *   the buffer at time of initialization.
    * 
    * @param bytes Bytes to increase buffer size by.
-   * @throws If `bytes` is not a positive integer.
+   * @throws If `bytes` is not a non-negative integer.
    */
   increaseSize(bytes: number) {
-    if (!(Number.isInteger(bytes) && bytes > 0))
-      throw new RangeError("Can only increase size by a positive integer.");
+    if (!(Number.isInteger(bytes) && bytes >= 0))
+      throw new RangeError("Can only increase size by a non-negative integer.");
     this._addBytesToBuffer(bytes);
   }
 
