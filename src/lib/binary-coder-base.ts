@@ -110,6 +110,7 @@ export default abstract class BinaryCoderBase {
    * @param n Number of iterations / length of resulting list.
    * @param fn Function to call on each iteration / to populate each list item.
    * @returns List containing the results of calling `fn()` `n` times.
+   * @throws If `n` is negative.
    */
   iterate<T>(n: number, fn: (i: number) => T): T[] {
     if (n < 0) throw new RangeError(`Cannot iterate less than 0 times.`);

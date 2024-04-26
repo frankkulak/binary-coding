@@ -63,6 +63,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * @param size Size of buffer to encode.
    * @param initialOffset Initial offset to use (0 by default).
    * @param endianness Endianness to use (little endian by default).
+   * @throws If size is not a non-negative integer.
    */
   static alloc(
     size: number,
@@ -80,9 +81,11 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * function ends, the buffer will be cropped so that it contains the exact
    * amount of bytes required.
    * 
-   * **Note**: It is not recommended to use this method when performance is
-   * critical, as new buffers may be generated multiple times. For more
-   * performant options, see {@link constructor} and {@link alloc}.
+   * **Notes**:
+   * - New buffers may be generated multiple times; references to them are
+   *   unreliable.
+   * - When performance is critical, it is recommended to use {@link alloc} or
+   *   {@link constructor} with a pre-calculated size instead.
    * 
    * @param builder Function to run in a dynamic sizing context.
    * @returns Encoder created with dynamic size.
@@ -94,12 +97,16 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * function ends, the buffer will be cropped so that it contains the exact
    * amount of bytes required.
    * 
-   * **Note**: It is not recommended to use this method when performance is
-   * critical, as new buffers may be generated multiple times. For more
-   * performant options, see {@link constructor} and {@link alloc}.
+   * **Notes**:
+   * - New buffers may be generated multiple times; references to them are
+   *   unreliable.
+   * - When performance is critical, it is recommended to use {@link alloc} or
+   *   {@link constructor} with a pre-calculated size instead.
    * 
    * @param options Configurations for creating the encoder.
    * @returns Encoder created with dynamic size.
+   * @throws If `minimumSize` is not a non-negative integer.
+   * @throws If `chunkSize` is not a positive integer.
    */
   static dynamicallySized(options: DynamicSizeBuilderWithOptions): BinaryEncoder;
   static dynamicallySized(
@@ -131,6 +138,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * 
    * @param value The characters to write.
    * @param encoding Character encoding to write with ("utf-8" by default).
+   * @throws If buffer cannot fit number of specified byte(s).
    */
   chars(value: string, encoding: BufferEncoding = "utf-8") {
     const byteLength = Buffer.byteLength(value, encoding);
@@ -145,6 +153,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * 
    * @param value The string to write.
    * @param encoding Character encoding to write with ("utf-8" by default).
+   * @throws If buffer cannot fit number of specified byte(s).
    */
   terminatedString(value: string, encoding: BufferEncoding = "utf-8") {
     this.chars(value, encoding);
@@ -156,6 +165,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * 
    * @deprecated Use {@link chars} instead.
    * @param value The characters to write.
+   * @throws If buffer cannot fit number of specified byte(s).
    */
   charsUtf8(value: string) {
     this.chars(value, "utf-8");
@@ -166,6 +176,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * 
    * @deprecated Use {@link chars} instead (use "base64" as second argument).
    * @param value The characters to write.
+   * @throws If buffer cannot fit number of specified byte(s).
    */
   charsBase64(value: string) {
     this.chars(value, "base64");
@@ -179,6 +190,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * Writes a UInt8 value of 1 if the given boolean is true, or 0 if false.
    * 
    * @param value Boolean value to write as a UInt8.
+   * @throws If buffer cannot fit 1 more byte.
    */
   boolean(value: boolean) {
     this.uint8(value ? 1 : 0);
@@ -188,6 +200,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * Writes a single numerical value as a byte (alias for {@link uint8}).
    * 
    * @param value Single byte value to write.
+   * @throws If buffer cannot fit 1 more byte.
    */
   byte(value: number) {
     this.uint8(value);
@@ -197,6 +210,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * Writes an array of bytes to the buffer.
    * 
    * @param values Array of bytes to write.
+   * @throws If buffer cannot fit number of specified byte(s).
    */
   bytes(values: number[] | Uint8Array) {
     values.forEach((value: number) => this.byte(value));
@@ -206,6 +220,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * Writes the given number of null bytes. If omitted, only one is written.
    * 
    * @param bytes Number of null bytes to write (1 by default).
+   * @throws If buffer cannot fit number of specified byte(s).
    */
   null(bytes: number = 1) {
     if (bytes > 0) for (let _ = 0; _ < bytes; ++_) this.uint8(0);
@@ -229,6 +244,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * Writes an 8-bit unsigned integer. Consumes 1 byte.
    * 
    * @param value The UInt8 to write.
+   * @throws If buffer cannot fit 1 more byte.
    */
   uint8(value: number) {
     this._number(1, value, "writeUInt8");
@@ -238,6 +254,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * Writes a 16-bit unsigned integer. Consumes 2 bytes.
    * 
    * @param value The UInt16 to write.
+   * @throws If buffer cannot fit 2 more bytes.
    */
   uint16(value: number) {
     this._number(
@@ -251,6 +268,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * Writes a 32-bit unsigned integer. Consumes 4 bytes.
    * 
    * @param value The UInt32 to write.
+   * @throws If buffer cannot fit 4 more bytes.
    */
   uint32(value: number) {
     this._number(
@@ -264,6 +282,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * Writes a 64-bit unsigned integer. Consumes 8 bytes.
    * 
    * @param value The UInt64 to write.
+   * @throws If buffer cannot fit 8 more bytes.
    */
   uint64(value: number | bigint) {
     this._bigint(
@@ -276,6 +295,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * Writes an 8-bit signed integer. Consumes 1 byte.
    * 
    * @param value The Int8 to write.
+   * @throws If buffer cannot fit 1 more byte.
    */
   int8(value: number) {
     this._number(1, value, "writeInt8");
@@ -285,6 +305,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * Writes a 16-bit signed integer. Consumes 2 bytes.
    * 
    * @param value The Int16 to write.
+   * @throws If buffer cannot fit 2 more bytes.
    */
   int16(value: number) {
     this._number(
@@ -298,6 +319,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * Writes a 32-bit signed integer. Consumes 4 bytes.
    * 
    * @param value The Int32 to write.
+   * @throws If buffer cannot fit 4 more bytes.
    */
   int32(value: number) {
     this._number(
@@ -311,6 +333,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * Writes a 64-bit signed integer. Consumes 8 bytes.
    * 
    * @param value The Int64 to write.
+   * @throws If buffer cannot fit 8 more bytes.
    */
   int64(value: number | bigint) {
     this._bigint(
@@ -323,6 +346,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * Writes a float. Consumes 4 bytes.
    * 
    * @param value The float to write.
+   * @throws If buffer cannot fit 4 more bytes.
    */
   float(value: number) {
     this._number(
@@ -336,6 +360,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * Writes a double. Consumes 8 bytes.
    * 
    * @param value The double to write.
+   * @throws If buffer cannot fit 8 more bytes.
    */
   double(value: number) {
     this._number(
@@ -349,29 +374,76 @@ export default class BinaryEncoder extends BinaryCoderBase {
 
   //#region Dynamic Sizing
 
-  // TODO: method to increase size by n bytes
-
-  // TODO: method to increase size for clearance
+  /**
+   * Checks whether this encoder can safely consume the given number of bytes
+   * from the given offset (or the current offset if omitted), and if not,
+   * increases the size of the buffer by just enough to do so.
+   * 
+   * **Notes**:
+   * - A new buffer may be generated; references to it will be unreliable.
+   * - When performance is critical, you should precalculate the entire size of
+   *   the buffer at time of initialization.
+   * 
+   * @param bytes Number of bytes to check.
+   * @param fromOffset Offset to check from, if different than current one.
+   * @returns Number of bytes that were added, if any.
+   * @throws If offset is negative (cannot add bytes to start).
+   */
+  ensureClearance(bytes: number, fromOffset?: number): number {
+    const offset = fromOffset ?? this.offset;
+    if (offset < 0) throw new RangeError("Cannot add bytes to start of buffer.");
+    const clearance = this.byteLength - offset;
+    if (bytes <= clearance) return 0;
+    const bytesToAdd = bytes - clearance;
+    this._addBytesToBuffer(bytesToAdd);
+    return bytesToAdd;
+  }
 
   /**
-   * Runs a function in which the encoder's size will dynamically grow in order
-   * to accomodate all of the data that is written. When the function ends, the
-   * buffer will be cropped so that it contains the exact amount of bytes
-   * required (Note: it will never crop bytes that existed before this function
-   * was called, even if they are empty).
+   * Increases the size of the buffer by the given number of bytes.
+   * 
+   * **Notes**:
+   * - A new buffer will be generated; references to it will be broken.
+   * - When performance is critical, you should precalculate the entire size of
+   *   the buffer at time of initialization.
+   * 
+   * @param bytes Bytes to increase buffer size by.
+   * @throws If `bytes` is not a positive integer.
+   */
+  increaseSize(bytes: number) {
+    if (!(Number.isInteger(bytes) && bytes > 0))
+      throw new RangeError("Can only increase size by a positive integer.");
+    this._addBytesToBuffer(bytes);
+  }
+
+  /**
+   * Runs a function in which the encoder's size can dynamically grow to fit the
+   * data written. When the function ends, any unused bytes that did not exist
+   * before calling this function will be pruned.
+   * 
+   * **Notes**:
+   * - New buffers may be generated multiple times; references to them are
+   *   unreliable.
+   * - When performance is critical, you should precalculate the entire size of
+   *   the buffer at time of initialization.
    * 
    * @param fn Function to run in a dynamic sizing context.
    */
   withDynamicSize(fn: () => void): void;
   /**
-   * Runs a function in which the encoder's size will dynamically grow in order
-   * to accomodate all of the data that is written. When the function ends, the
-   * buffer will be cropped so that it contains the exact amount of bytes
-   * required (Note: it will never crop bytes that existed before this function
-   * was called, even if they are empty).
+   * Runs a function in which the encoder's size can dynamically grow to fit the
+   * data written. When the function ends, any unused bytes that did not exist
+   * before calling this function will be pruned.
+   * 
+   * **Notes**:
+   * - New buffers may be generated multiple times; references to them are
+   *   unreliable.
+   * - When performance is critical, you should precalculate the entire size of
+   *   the buffer at time of initialization.
    * 
    * @param chunkSize Number of bytes to add on overflow (256 by default).
    * @param fn Function to run in a dynamic sizing context.
+   * @throws If `chunkSize` is not a positive integer.
    */
   withDynamicSize(chunkSize: number, fn: () => void): void;
   withDynamicSize(fnOrChunkSize: number | (() => void), possibleFn?: () => void) {

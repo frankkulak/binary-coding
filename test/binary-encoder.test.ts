@@ -844,6 +844,14 @@ describe("BinaryEncoder", () => {
 
   //#region Dynamic Sizing
 
+  describe("#ensureClearance()", () => {
+    // TODO:
+  });
+
+  describe("#increaseSize()", () => {
+    // TODO:
+  });
+
   describe("#withDynamicSize()", () => {
     context("argument handling", () => {
       it("should use the provided chunk size", () => {
