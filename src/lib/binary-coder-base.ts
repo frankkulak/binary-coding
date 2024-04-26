@@ -28,7 +28,6 @@ export default abstract class BinaryCoderBase {
 
   /** Buffer being read/written. */
   get buffer(): Buffer { return this._buffer; }
-  protected set buffer(value: Buffer) { this._buffer = value; }
 
   /** Total byte length of buffer. */
   get byteLength(): number { return this.buffer.length; }
@@ -92,9 +91,8 @@ export default abstract class BinaryCoderBase {
   }
 
   /**
-   * Returns whether this coder can safely consume the given number of bytes,
-   * either from a specified offset if `fromOffset` is provided, or from the
-   * current offset if it is omitted.
+   * Returns whether this coder can safely consume the given number of bytes
+   * from the given offset (or the current offset if omitted).
    * 
    * @param bytes Number of bytes to check
    * @param fromOffset Offset to check from, if different than current one
@@ -275,6 +273,15 @@ export default abstract class BinaryCoderBase {
   //#endregion
 
   //#region Protected Methods
+
+  protected _addBytesToBuffer(bytes: number) {
+    if (bytes <= 0) return;
+    this._buffer = Buffer.concat([this._buffer, Buffer.alloc(bytes)]);
+  }
+
+  protected _cropBuffer(size: number) {
+    this._buffer = this.buffer.slice(0, size);
+  }
 
   protected _resolveEndian<T extends EndianResolvableType>(le: T, be: T): T {
     return this.endianness === "LE" ? le : be;

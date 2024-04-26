@@ -596,103 +596,182 @@ describe("BinaryEncoder", () => {
   describe("#withDynamicSize()", () => {
     context("argument handling", () => {
       it("should use the provided chunk size", () => {
-        // TODO:
+        const encoder = BinaryEncoder.alloc(0);
+        encoder.withDynamicSize(8, () => {
+          expect(encoder.byteLength).to.equal(0);
+          encoder.null();
+          expect(encoder.byteLength).to.equal(8);
+        });
       });
 
       it("should use a chunk size of 256 if not provided", () => {
-        // TODO:
+        const encoder = BinaryEncoder.alloc(0);
+        encoder.withDynamicSize(() => {
+          expect(encoder.byteLength).to.equal(0);
+          encoder.null();
+          expect(encoder.byteLength).to.equal(256);
+        });
       });
 
       it("should throw when chunk size is a float", () => {
-        // TODO:
+        const encoder = BinaryEncoder.alloc(0);
+        expect(() => encoder.withDynamicSize(1.5, () => { })).to.throw();
       });
 
       it("should throw when chunk size is 0", () => {
-        // TODO:
+        const encoder = BinaryEncoder.alloc(0);
+        expect(() => encoder.withDynamicSize(0, () => { })).to.throw();
       });
 
       it("should throw when chunk size is negative", () => {
-        // TODO:
+        const encoder = BinaryEncoder.alloc(0);
+        expect(() => encoder.withDynamicSize(-1, () => { })).to.throw();
       });
     });
 
     context("before function execution", () => {
       it("should throw if dynamic resizing is already enabled", () => {
-        // TODO:
+        const encoder = BinaryEncoder.alloc(0);
+        encoder.withDynamicSize(() => {
+          expect(() => encoder.withDynamicSize(() => { })).to.throw();
+        });
       });
 
       it("should not change the buffer size initially", () => {
-        // TODO:
-      });
-
-      it("should not change the offset initially", () => {
-        // TODO:
+        const encoder = BinaryEncoder.alloc(0);
+        encoder.withDynamicSize(() => {
+          expect(encoder.byteLength).to.equal(0);
+        });
       });
     });
 
     context("dynamic resizing", () => {
       context("seeking offset", () => {
         it("should not resize when seeking beyond byte length", () => {
-          // TODO:
+          const encoder = BinaryEncoder.alloc(8);
+          encoder.withDynamicSize(() => {
+            encoder.seek(16);
+            expect(encoder.byteLength).to.equal(8);
+          });
         });
 
         it("should not resize when seeking beyond, seeking back, and writing", () => {
-          // TODO:
+          const encoder = BinaryEncoder.alloc(8);
+          encoder.withDynamicSize(() => {
+            encoder.seek(16);
+            encoder.seek(4);
+            encoder.null();
+            expect(encoder.byteLength).to.equal(8);
+          });
         });
       });
 
       context("data can fit in current buffer", () => {
         it("should not resize when writing up to 2+ bytes before end", () => {
-          // TODO:
+          const encoder = BinaryEncoder.alloc(6);
+          encoder.withDynamicSize(() => {
+            encoder.uint32(5);
+            expect(encoder.byteLength).to.equal(6);
+          });
         });
 
         it("should not resize when writing up to 1 byte before end", () => {
-          // TODO:
+          const encoder = BinaryEncoder.alloc(5);
+          encoder.withDynamicSize(() => {
+            encoder.uint32(5);
+            expect(encoder.byteLength).to.equal(5);
+          });
         });
 
         it("should not resize when writing up to last byte", () => {
-          // TODO:
+          const encoder = BinaryEncoder.alloc(4);
+          encoder.withDynamicSize(() => {
+            encoder.uint32(5);
+            expect(encoder.byteLength).to.equal(4);
+          });
         });
       });
 
       context("data cannot fit in current buffer", () => {
         it("should resize by 1 chunk when writing 1 byte past end", () => {
-          // TODO:
+          const encoder = BinaryEncoder.alloc(3);
+          encoder.withDynamicSize(4, () => {
+            encoder.uint32(5);
+            expect(encoder.byteLength).to.equal(7);
+          });
         });
 
         it("should resize by 1 chunk when data requires chunk size - 1 byte", () => {
-          // TODO:
+          const encoder = BinaryEncoder.alloc(4, 3);
+          encoder.withDynamicSize(4, () => {
+            encoder.uint32(5);
+            expect(encoder.byteLength).to.equal(8);
+          });
         });
 
         it("should resize by 1 chunk when data requires chunk size", () => {
-          // TODO:
+          const encoder = BinaryEncoder.alloc(4, 4);
+          encoder.withDynamicSize(4, () => {
+            encoder.uint32(5);
+            expect(encoder.byteLength).to.equal(8);
+          });
         });
 
         it("should resize by 2 chunks when data requires chunk size + 1 byte", () => {
-          // TODO:
+          const encoder = BinaryEncoder.alloc(4, 5);
+          encoder.withDynamicSize(4, () => {
+            encoder.uint32(5);
+            expect(encoder.byteLength).to.equal(12);
+          });
         });
 
         it("should resize by 2 chunks when data requires 2x chunk size - 1 byte", () => {
-          // TODO:
+          const encoder = BinaryEncoder.alloc(4, 3);
+          encoder.withDynamicSize(4, () => {
+            encoder.uint64(5n);
+            expect(encoder.byteLength).to.equal(12);
+          });
         });
 
         it("should resize by 2 chunks when data requires 2x chunk size", () => {
-          // TODO:
+          const encoder = BinaryEncoder.alloc(4, 4);
+          encoder.withDynamicSize(4, () => {
+            encoder.uint64(5n);
+            expect(encoder.byteLength).to.equal(12);
+          });
         });
 
         it("should resize by 3 chunks when data requires 2x chunk size + 1 byte", () => {
-          // TODO:
+          const encoder = BinaryEncoder.alloc(4, 5);
+          encoder.withDynamicSize(4, () => {
+            encoder.uint64(5n);
+            expect(encoder.byteLength).to.equal(16);
+          });
         });
       });
     });
 
     context("after function execution", () => {
       it("should disable dynamic resizing", () => {
-        // TODO:
+        const encoder = BinaryEncoder.alloc(0);
+        encoder.withDynamicSize(4, () => {
+          expect(encoder.hasClearance(4)).to.be.false;
+          expect(() => encoder.uint32(5)).to.not.throw();
+        });
+        expect(encoder.hasClearance(4)).to.be.false;
+        expect(() => encoder.uint32(5)).to.throw();
       });
 
       it("should not permanantly alter the default chunk size", () => {
-        // TODO:
+        const encoder = BinaryEncoder.alloc(0);
+        encoder.withDynamicSize(1, () => {
+          encoder.null();
+          expect(encoder.byteLength).to.equal(1);
+        });
+        encoder.withDynamicSize(() => {
+          encoder.null();
+          expect(encoder.byteLength).to.equal(257);
+        });
       });
 
       it("should not permanantly alter the crop size", () => {
@@ -701,6 +780,14 @@ describe("BinaryEncoder", () => {
 
       it("should contain all of the data that was written", () => {
         // TODO:
+      });
+
+      it("should not reduce the original size of the buffer, even if it wasn't used", () => {
+        const encoder = BinaryEncoder.alloc(32);
+        encoder.withDynamicSize(() => {
+          encoder.uint32(4);
+        });
+        expect(encoder.byteLength).to.equal(32);
       });
 
       context("offset of furthest written byte == available byte length", () => {

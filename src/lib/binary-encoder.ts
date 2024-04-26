@@ -3,12 +3,20 @@ import type { BufferWriteBigIntMethod, BufferWriteNumberMethod, Endianness } fro
 
 const _DEFAULT_CHUNK_SIZE = 256;
 
+/** Function that builds an encoder in a dynamic resizing context. */
 type DynamicSizeBuilder = (encoder: BinaryEncoder) => void;
 
+/** Options for static `BinaryEncoder.withDynamicSize()` method. */
 interface DynamicSizeBuilderWithOptions {
+  /** Initial size to use in new BinaryEncoder (chunkSize by default) */
+  initialSize?: number;
+  /** Initial offset to use in new BinaryEncoder (0 by default) */
   initialOffset?: number;
+  /** Endianness to use in new BinaryEncoder (little endian by default) */
   endianness?: Endianness;
+  /** Number of bytes to add on overflow (256 by default) */
   chunkSize?: number;
+  /** Function that builds the new BinaryEncoder with dynamic resizing */
   builder: DynamicSizeBuilder;
 }
 
@@ -57,16 +65,38 @@ export default class BinaryEncoder extends BinaryCoderBase {
     return new BinaryEncoder(Buffer.alloc(size), initialOffset, endianness);
   }
 
-  // TODO: docs
+  /**
+   * Creates a new BinaryEncoder whose size will dynamically grow to fit all of
+   * the data that is written in the given function.
+   * 
+   * When the function ends, the buffer will be cropped so that it contains the
+   * exact amount of bytes required.
+   * 
+   * @param builder Function to run in a dynamic sizing context
+   * @returns New BinaryEncoder created with dynamic size
+   */
   static withDynamicSize(builder: DynamicSizeBuilder): BinaryEncoder;
+  /**
+   * Creates a new BinaryEncoder whose size will dynamically grow to fit all of
+   * the data that is written in the given function.
+   * 
+   * When the function ends, the buffer will be cropped so that it contains the
+   * exact amount of bytes required.
+   * 
+   * @param options Configurations for creating the new BinaryEncoder
+   * @returns New BinaryEncoder created with dynamic size
+   */
   static withDynamicSize(options: DynamicSizeBuilderWithOptions): BinaryEncoder;
-  static withDynamicSize(builderOrOptions: DynamicSizeBuilder | DynamicSizeBuilderWithOptions): BinaryEncoder {
+  static withDynamicSize(
+    builderOrOptions: DynamicSizeBuilder | DynamicSizeBuilderWithOptions
+  ): BinaryEncoder {
     const options = typeof builderOrOptions === "function" ? null : builderOrOptions;
     const offset = options?.initialOffset ?? 0;
     const endianness = options?.endianness ?? "LE";
     const chunkSize = options?.chunkSize ?? _DEFAULT_CHUNK_SIZE;
+    const initialSize = options?.initialSize ?? chunkSize;
     const builder = options?.builder ?? builderOrOptions as DynamicSizeBuilder;
-    const encoder = BinaryEncoder.alloc(chunkSize, offset, endianness);
+    const encoder = BinaryEncoder.alloc(initialSize, offset, endianness);
     encoder.withDynamicSize(chunkSize, () => builder(encoder));
     return encoder;
   }
@@ -312,8 +342,26 @@ export default class BinaryEncoder extends BinaryCoderBase {
 
   //#region Dynamic Sizing
 
-  // TODO: docs
+  /**
+   * Runs a function in which the encoder's size will dynamically grow in order
+   * to accomodate all of the data that is written.
+   * 
+   * When the function ends, the buffer will be cropped so that it contains the
+   * exact amount of bytes required.
+   * 
+   * @param fn Function to run in a dynamic sizing context
+   */
   withDynamicSize(fn: () => void): void;
+  /**
+   * Runs a function in which the encoder's size will dynamically grow in order
+   * to accomodate all of the data that is written.
+   * 
+   * When the function ends, the buffer will be cropped so that it contains the
+   * exact amount of bytes required.
+   * 
+   * @param chunkSize Number of bytes to add on overflow (256 by default)
+   * @param fn Function to run in a dynamic sizing context
+   */
   withDynamicSize(chunkSize: number, fn: () => void): void;
   withDynamicSize(fnOrChunkSize: number | (() => void), possibleFn?: () => void) {
     if (this._dynamicSizing)
@@ -329,7 +377,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
     this._dynamicSizing = false;
     this._dynamicChunkSize = _DEFAULT_CHUNK_SIZE;
     if (this._dynamicBufferCropSize < this.byteLength)
-      this.buffer = this.buffer.slice(0, this._dynamicBufferCropSize);
+      this._cropBuffer(this._dynamicBufferCropSize);
     this._dynamicBufferCropSize = 0;
   }
 
@@ -342,7 +390,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
     let bytesToAdd = 0;
     do { bytesToAdd += this._dynamicChunkSize; }
     while (this.offset + bytes > this.byteLength + bytesToAdd);
-    this.buffer = Buffer.concat([this.buffer, Buffer.alloc(bytesToAdd)]);
+    this._addBytesToBuffer(bytesToAdd);
   }
 
   //#endregion
