@@ -1,5 +1,6 @@
 .DS_Store
 .vscode/settings.json
 dst/
+docs/
 ignore/
 node_modules/
