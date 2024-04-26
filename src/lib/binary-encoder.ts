@@ -8,15 +8,15 @@ type DynamicSizeBuilder = (encoder: BinaryEncoder) => void;
 
 /** Options for static `BinaryEncoder.withDynamicSize()` method. */
 interface DynamicSizeBuilderWithOptions {
-  /** Initial size to use in new BinaryEncoder (chunkSize by default) */
-  initialSize?: number;
-  /** Initial offset to use in new BinaryEncoder (0 by default) */
+  /** If provided, the resulting encoder will have at least this many bytes */
+  minimumSize?: number;
+  /** Initial offset to use in the encoder (0 by default) */
   initialOffset?: number;
-  /** Endianness to use in new BinaryEncoder (little endian by default) */
+  /** Endianness to use in the encoder (little endian by default) */
   endianness?: Endianness;
   /** Number of bytes to add on overflow (256 by default) */
   chunkSize?: number;
-  /** Function that builds the new BinaryEncoder with dynamic resizing */
+  /** Function that builds the encoder with dynamic resizing */
   builder: DynamicSizeBuilder;
 }
 
@@ -30,6 +30,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
   private _dynamicSizing = false;
   private _dynamicChunkSize = _DEFAULT_CHUNK_SIZE;
   private _dynamicBufferCropSize = 0;
+  private _dynamicMinimumCropSize = null;
 
   //#endregion
 
@@ -62,6 +63,8 @@ export default class BinaryEncoder extends BinaryCoderBase {
     initialOffset: number = 0,
     endianness: Endianness = "LE"
   ): BinaryEncoder {
+    if (!(Number.isInteger(size) && size >= 0))
+      throw new RangeError("Encoder size must be a non-negative integer.");
     return new BinaryEncoder(Buffer.alloc(size), initialOffset, endianness);
   }
 
@@ -91,13 +94,19 @@ export default class BinaryEncoder extends BinaryCoderBase {
     builderOrOptions: DynamicSizeBuilder | DynamicSizeBuilderWithOptions
   ): BinaryEncoder {
     const options = typeof builderOrOptions === "function" ? null : builderOrOptions;
+    const builder = options?.builder ?? builderOrOptions as DynamicSizeBuilder;
     const offset = options?.initialOffset ?? 0;
     const endianness = options?.endianness ?? "LE";
     const chunkSize = options?.chunkSize ?? _DEFAULT_CHUNK_SIZE;
-    const initialSize = options?.initialSize ?? chunkSize;
-    const builder = options?.builder ?? builderOrOptions as DynamicSizeBuilder;
+    // chunkSize will be validated in encoder.withDynamicSize()
+    const minimumSize = options?.minimumSize ?? 0;
+    if (!(Number.isInteger(minimumSize) && minimumSize >= 0))
+      throw new RangeError("Minimum size must be a non-negative integer.");
+    const initialSize = Math.max(chunkSize, minimumSize);
     const encoder = BinaryEncoder.alloc(initialSize, offset, endianness);
+    encoder._dynamicMinimumCropSize = minimumSize;
     encoder.withDynamicSize(chunkSize, () => builder(encoder));
+    encoder._dynamicMinimumCropSize = null;
     return encoder;
   }
 
@@ -369,10 +378,10 @@ export default class BinaryEncoder extends BinaryCoderBase {
     const fn = possibleFn ?? fnOrChunkSize as () => void;
     const chunkSize = possibleFn ? fnOrChunkSize as number : _DEFAULT_CHUNK_SIZE;
     if (!(Number.isInteger(chunkSize) && chunkSize > 0))
-      throw new Error("Chunk size must be a positive integer.");
+      throw new RangeError("Chunk size must be a positive integer.");
     this._dynamicSizing = true;
     this._dynamicChunkSize = chunkSize;
-    this._dynamicBufferCropSize = this.byteLength;
+    this._dynamicBufferCropSize = this._dynamicMinimumCropSize ?? this.byteLength;
     fn();
     this._dynamicSizing = false;
     this._dynamicChunkSize = _DEFAULT_CHUNK_SIZE;

@@ -144,10 +144,261 @@ describe("BinaryEncoder", () => {
       const encoder = BinaryEncoder.alloc(5);
       expect(encoder.endianness).to.equal("LE");
     });
+
+    it("should throw if given size is negative", () => {
+      expect(() => BinaryEncoder.alloc(-1)).to.throw();
+    });
+
+    it("should throw if given size is not an integer", () => {
+      expect(() => BinaryEncoder.alloc(1.5)).to.throw();
+    });
   });
 
   describe("static#withDynamicSize()", () => {
-    // TODO:
+    it("should throw if given minimum size is negative", () => {
+      expect(() => BinaryEncoder.withDynamicSize({
+        minimumSize: -1,
+        builder(_) { }
+      })).to.throw();
+    });
+
+    it("should throw if given minimum size is not an integer", () => {
+      expect(() => BinaryEncoder.withDynamicSize({
+        minimumSize: 1.5,
+        builder(_) { }
+      })).to.throw();
+    });
+
+    it("should use the given minimum size as initial size if larger than chunk size", () => {
+      BinaryEncoder.withDynamicSize({
+        minimumSize: 8,
+        chunkSize: 4,
+        builder(encoder) {
+          expect(encoder.byteLength).to.equal(8);
+        }
+      });
+    });
+
+    it("should use the given chunk size as initial size if larger than minimum size", () => {
+      BinaryEncoder.withDynamicSize({
+        minimumSize: 4,
+        chunkSize: 8,
+        builder(encoder) {
+          expect(encoder.byteLength).to.equal(8);
+        }
+      });
+    });
+
+    it("should use the given chunk size as initial size if no minimum size", () => {
+      BinaryEncoder.withDynamicSize({
+        chunkSize: 4,
+        builder(encoder) {
+          expect(encoder.byteLength).to.equal(4);
+        }
+      });
+    });
+
+    it("should use 256 as initial size if no minimum size or chunk size", () => {
+      BinaryEncoder.withDynamicSize({
+        builder(encoder) {
+          expect(encoder.byteLength).to.equal(256);
+        }
+      });
+    });
+
+    it("should use the given initial offset", () => {
+      BinaryEncoder.withDynamicSize({
+        initialOffset: 4,
+        builder(encoder) {
+          expect(encoder.offset).to.equal(4);
+        }
+      });
+    });
+
+    it("should use initial offset of 0 if not provided", () => {
+      BinaryEncoder.withDynamicSize({
+        builder(encoder) {
+          expect(encoder.offset).to.equal(0);
+        }
+      });
+    });
+
+    it("should use the given endianness", () => {
+      BinaryEncoder.withDynamicSize({
+        endianness: "BE",
+        builder(encoder) {
+          expect(encoder.endianness).to.equal("BE");
+        }
+      });
+    });
+
+    it("should use little endianness if not provided", () => {
+      BinaryEncoder.withDynamicSize({
+        builder(encoder) {
+          expect(encoder.endianness).to.equal("LE");
+        }
+      });
+    });
+
+    it("should use the given chunk size", () => {
+      BinaryEncoder.withDynamicSize({
+        chunkSize: 4,
+        builder(encoder) {
+          expect(encoder.byteLength).to.equal(4);
+          encoder.chars("testing");
+          expect(encoder.byteLength).to.equal(8);
+        }
+      });
+    });
+
+    it("should use chunk size of 256 if not provided", () => {
+      BinaryEncoder.withDynamicSize({
+        builder(encoder) {
+          expect(encoder.byteLength).to.equal(256);
+          encoder.seek(256);
+          encoder.chars("testing");
+          expect(encoder.byteLength).to.equal(512);
+        }
+      });
+    });
+
+    it("should throw if given chunk size is negative", () => {
+      expect(() => BinaryEncoder.withDynamicSize({
+        chunkSize: -1,
+        builder(_) { }
+      })).to.throw();
+    });
+
+    it("should throw if given chunk size is 0", () => {
+      expect(() => BinaryEncoder.withDynamicSize({
+        chunkSize: 0,
+        builder(_) { }
+      })).to.throw();
+    });
+
+    it("should throw if given chunk size is not an integer", () => {
+      expect(() => BinaryEncoder.withDynamicSize({
+        chunkSize: 1.5,
+        builder(_) { }
+      })).to.throw();
+    });
+
+    it("should execute the given builder function when passed alone", () => {
+      let executed = false;
+      BinaryEncoder.withDynamicSize((_) => {
+        executed = true;
+      });
+      expect(executed).to.be.true;
+    });
+
+    it("should execute the given builder function when passed with options", () => {
+      let executed = false;
+      BinaryEncoder.withDynamicSize({
+        builder(_) {
+          executed = true;
+        }
+      });
+      expect(executed).to.be.true;
+    });
+
+    it("should resize when writing beyond current byte length", () => {
+      BinaryEncoder.withDynamicSize({
+        chunkSize: 4,
+        builder(encoder) {
+          expect(encoder.byteLength).to.equal(4);
+          encoder.chars("testing");
+          expect(encoder.byteLength).to.equal(8);
+        },
+      });
+    });
+
+    it("should not crop the buffer if size < minimum size", () => {
+      const encoder = BinaryEncoder.withDynamicSize({
+        minimumSize: 8,
+        chunkSize: 8,
+        builder(encoder) {
+          encoder.chars("test");
+        }
+      });
+      expect(encoder.byteLength).to.equal(8);
+    });
+
+    it("should not crop the buffer if size == minimum size", () => {
+      const encoder = BinaryEncoder.withDynamicSize({
+        minimumSize: 4,
+        chunkSize: 4,
+        builder(encoder) {
+          encoder.chars("test");
+        }
+      });
+      expect(encoder.byteLength).to.equal(4);
+    });
+
+    it("should crop the buffer to min size when writing fewer bytes", () => {
+      const encoder = BinaryEncoder.withDynamicSize({
+        minimumSize: 12,
+        builder(encoder) {
+          encoder.chars("test");
+          encoder.uint32(5);
+          encoder.boolean(true);
+        }
+      });
+      expect(encoder.byteLength).to.equal(12);
+    });
+
+    it("should crop the buffer to min size when writing exact amount of bytes", () => {
+      const encoder = BinaryEncoder.withDynamicSize({
+        minimumSize: 9,
+        builder(encoder) {
+          encoder.chars("test");
+          encoder.uint32(5);
+          encoder.boolean(true);
+        }
+      });
+      expect(encoder.byteLength).to.equal(9);
+    });
+
+    it("should crop the buffer to bytes written when writing more than min size", () => {
+      const encoder = BinaryEncoder.withDynamicSize({
+        minimumSize: 4,
+        builder(encoder) {
+          encoder.chars("test");
+          encoder.uint32(5);
+          encoder.boolean(true);
+        }
+      });
+      expect(encoder.byteLength).to.equal(9);
+    });
+
+    it("should crop the buffer to bytes written if no minimum size", () => {
+      const encoder = BinaryEncoder.withDynamicSize(encoder => {
+        encoder.chars("test");
+        encoder.uint32(5);
+        encoder.boolean(true);
+      });
+      expect(encoder.byteLength).to.equal(9);
+    });
+
+    it("should contain all of the data written in the function", () => {
+      const encoder = BinaryEncoder.withDynamicSize(encoder => {
+        encoder.chars("test");
+        encoder.uint32(5);
+        encoder.boolean(true);
+      });
+      expect(encoder.buffer.toString("utf-8", 0, 4)).to.equal("test");
+      expect(encoder.buffer.readUInt32LE(4)).to.equal(5);
+      expect(encoder.buffer.at(8)).to.equal(1);
+    });
+
+    it("should return the exact encoder object that was passed to the builder", () => {
+      let generatedEncoder: BinaryEncoder | null = null;
+      const encoder = BinaryEncoder.withDynamicSize(encoder => {
+        generatedEncoder = encoder;
+      });
+      expect(encoder).to.equal(generatedEncoder);
+    });
+
+    // for more thorough behavior tests, see #withDynamicSize()
   });
 
   //#endregion
@@ -626,6 +877,24 @@ describe("BinaryEncoder", () => {
       it("should throw when chunk size is negative", () => {
         const encoder = BinaryEncoder.alloc(0);
         expect(() => encoder.withDynamicSize(-1, () => { })).to.throw();
+      });
+
+      it("should execute given function when passed alone", () => {
+        const encoder = BinaryEncoder.alloc(0);
+        let executed = false;
+        encoder.withDynamicSize(() => {
+          executed = true;
+        });
+        expect(executed).to.be.true;
+      });
+
+      it("should execute given function when passed with chunk size", () => {
+        const encoder = BinaryEncoder.alloc(0);
+        let executed = false;
+        encoder.withDynamicSize(4, () => {
+          executed = true;
+        });
+        expect(executed).to.be.true;
       });
     });
 
