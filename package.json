@@ -1,6 +1,6 @@
 {
   "name": "binary-coding",
-  "description": "Zero-dependency utilities for reading/writing binary data.",
+  "description": "Zero-dependency utilities for reading/writing binary data in JavaScript.",
   "version": "1.0.0",
   "author": "frankkulak",
   "license": "MIT",

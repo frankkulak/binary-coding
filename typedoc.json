@@ -1,0 +1,18 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["./src/index.ts"],
+  "out": "./docs",
+  "cname": "docs.frankkulak.com",
+  "sidebarLinks": {
+    "Other Versions": "../",
+    "View on GitHub": "https://github.com/frankkulak/binary-coding",
+    "View on npm": "https://npmjs.com/packages/binary-coding",
+    "": ""
+  },
+  "sourceLinkExternal": true,
+  "includeVersion": true,
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeExternals": true,
+  "sort": ["static-first","alphabetical"],
+}
