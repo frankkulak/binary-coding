@@ -379,6 +379,8 @@ export default class BinaryEncoder extends BinaryCoderBase {
     if (this._dynamicBufferCropSize < this.byteLength)
       this._cropBuffer(this._dynamicBufferCropSize);
     this._dynamicBufferCropSize = 0;
+    if (this.offset > this.byteLength)
+      this.offset = this.byteLength;
   }
 
   private _resizeIfDynamic(bytes: number) {
