@@ -81,7 +81,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * function ends, the buffer will be cropped so that it contains the exact
    * amount of bytes required.
    * 
-   * **Notes**:
+   * **Notes**
    * - New buffers may be generated multiple times; references to them are
    *   unreliable.
    * - When performance is critical, it is recommended to use {@link alloc} or
@@ -97,7 +97,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * function ends, the buffer will be cropped so that it contains the exact
    * amount of bytes required.
    * 
-   * **Notes**:
+   * **Notes**
    * - New buffers may be generated multiple times; references to them are
    *   unreliable.
    * - When performance is critical, it is recommended to use {@link alloc} or
@@ -105,8 +105,8 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * 
    * @param options Configurations for creating the encoder.
    * @returns Encoder created with dynamic size.
-   * @throws If `minimumSize` is not a non-negative integer.
-   * @throws If `chunkSize` is not a positive integer.
+   * @throws If `minimumSize` is not a non-negative integer or `chunkSize` is
+   * not a positive integer.
    */
   static dynamicallySized(options: DynamicSizeBuilderWithOptions): BinaryEncoder;
   static dynamicallySized(
@@ -379,7 +379,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * from the given offset (or the current offset if omitted), and if not,
    * increases the size of the buffer by just enough to do so.
    * 
-   * **Notes**:
+   * **Notes**
    * - A new buffer may be generated; references to it will be unreliable.
    * - When performance is critical, you should precalculate the entire size of
    *   the buffer at time of initialization.
@@ -402,7 +402,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
   /**
    * Increases the size of the buffer by the given number of bytes.
    * 
-   * **Notes**:
+   * **Notes**
    * - A new buffer will be generated; references to it will be broken.
    * - When performance is critical, you should precalculate the entire size of
    *   the buffer at time of initialization.
@@ -421,7 +421,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * data written. When the function ends, any unused bytes that did not exist
    * before calling this function will be pruned.
    * 
-   * **Notes**:
+   * **Notes**
    * - New buffers may be generated multiple times; references to them are
    *   unreliable.
    * - When performance is critical, you should precalculate the entire size of
@@ -435,7 +435,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * data written. When the function ends, any unused bytes that did not exist
    * before calling this function will be pruned.
    * 
-   * **Notes**:
+   * **Notes**
    * - New buffers may be generated multiple times; references to them are
    *   unreliable.
    * - When performance is critical, you should precalculate the entire size of

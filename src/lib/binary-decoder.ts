@@ -32,6 +32,7 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * @param bytes Number of bytes to read.
    * @param encoding Character encoding to parse with ("utf-8" by default).
    * @returns String parsed with given encoding.
+   * @throws If buffer does not contain the specified number of bytes.
    */
   chars(bytes: number, encoding: BufferEncoding = "utf-8"): string {
     if (!this.hasClearance(bytes))
@@ -49,6 +50,7 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * 
    * @param encoding Character encoding to parse with ("utf-8" by default).
    * @returns String parsed with given encoding.
+   * @throws If there is no null byte between current offset and end of buffer.
    */
   terminatedString(encoding: BufferEncoding = "utf-8"): string {
     const start = this.offset;
@@ -64,6 +66,7 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * @deprecated Use {@link chars} instead.
    * @param bytes Number of bytes to read.
    * @returns The characters read as a string with UTF-8 encoding.
+   * @throws If buffer does not contain the specified number of bytes.
    */
   charsUtf8(bytes: number): string {
     return this.chars(bytes, "utf-8");
@@ -75,6 +78,7 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * @deprecated Use {@link chars} instead (use "base64" as second argument).
    * @param bytes Number of bytes to read.
    * @returns The characters read as a string with Base64 encoding.
+   * @throws If buffer does not contain the specified number of bytes.
    */
   charsBase64(bytes: number): string {
     return this.chars(bytes, "base64");
@@ -87,6 +91,7 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * 
    * @deprecated Use {@link terminatedString} instead.
    * @returns The string read with UTF-8 encoding.
+   * @throws If there is no null byte between current offset and end of buffer.
    */
   string(): string {
     return this.terminatedString("utf-8");
@@ -100,6 +105,7 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * Reads the next byte as a boolean (0 is false, anything else is true).
    * 
    * @returns The boolean value of the next byte.
+   * @throws If buffer does not contain at least 1 more byte.
    */
   boolean(): boolean {
     return this.byte() !== 0;
@@ -109,6 +115,7 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * Reads a single byte as a UInt8 (alias of {@link uint8}).
    * 
    * @returns A single byte value.
+   * @throws If buffer does not contain at least 1 more byte.
    */
   byte(): number {
     return this.uint8();
@@ -119,6 +126,7 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * 
    * @param num The number of bytes to read.
    * @returns An array of bytes.
+   * @throws If buffer does not contain the specified number of bytes.
    */
   bytes(num: number): number[] {
     const bytes = [];
@@ -132,6 +140,7 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * @deprecated Use {@link subarray} instead.
    * @param size Size of the sub-buffer to slice.
    * @returns The sliced buffer.
+   * @throws If buffer does not contain the specified number of bytes.
    */
   slice(size: number): Buffer {
     return this.subarray(size);
@@ -142,6 +151,7 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * 
    * @param size Number of bytes to read into subarray.
    * @returns Buffer containing read bytes.
+   * @throws If buffer does not contain the specified number of bytes.
    */
   subarray(size: number): Buffer {
     if (!this.hasClearance(size))
@@ -172,6 +182,7 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * Reads an 8-bit unsigned integer. Consumes 1 byte.
    * 
    * @returns The read UInt8.
+   * @throws If buffer does not contain at least 1 more byte.
    */
   uint8(): number {
     return this._number("readUInt8", 1);
@@ -181,6 +192,7 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * Reads a 16-bit unsigned integer. Consumes 2 bytes.
    * 
    * @returns The read UInt16.
+   * @throws If buffer does not contain at least 2 more bytes.
    */
   uint16(): number {
     return this._number(
@@ -193,6 +205,7 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * Reads a 32-bit unsigned integer. Consumes 4 bytes.
    * 
    * @returns The read UInt32.
+   * @throws If buffer does not contain at least 4 more bytes.
    */
   uint32(): number {
     return this._number(
@@ -205,6 +218,7 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * Reads a 64-bit unsigned integer. Consumes 8 bytes.
    * 
    * @returns The read UInt64.
+   * @throws If buffer does not contain at least 8 more bytes.
    */
   uint64(): bigint {
     return this._bigint(
@@ -216,6 +230,7 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * Reads an 8-bit signed integer. Consumes 1 byte.
    * 
    * @returns The read Int8.
+   * @throws If buffer does not contain at least 1 more byte.
    */
   int8(): number {
     return this._number("readInt8", 1);
@@ -225,6 +240,7 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * Reads a 16-bit signed integer. Consumes 2 bytes.
    * 
    * @returns The read Int16.
+   * @throws If buffer does not contain at least 2 more bytes.
    */
   int16(): number {
     return this._number(
@@ -237,6 +253,7 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * Reads a 32-bit signed integer. Consumes 4 bytes.
    * 
    * @returns The read Int32.
+   * @throws If buffer does not contain at least 4 more bytes.
    */
   int32(): number {
     return this._number(
@@ -249,6 +266,7 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * Reads a 64-bit signed integer. Consumes 8 bytes.
    * 
    * @returns The read Int64.
+   * @throws If buffer does not contain at least 8 more bytes.
    */
   int64(): bigint {
     return this._bigint(
@@ -260,6 +278,7 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * Reads a float. Consumes 4 bytes.
    * 
    * @returns The read float.
+   * @throws If buffer does not contain at least 4 more bytes.
    */
   float(): number {
     return this._number(
@@ -272,6 +291,7 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * Reads a double. Consumes 8 bytes.
    * 
    * @returns The read double.
+   * @throws If buffer does not contain at least 8 more bytes.
    */
   double(): number {
     return this._number(
