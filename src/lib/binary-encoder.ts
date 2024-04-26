@@ -6,7 +6,7 @@ const _DEFAULT_CHUNK_SIZE = 256;
 /** Function that builds an encoder in a dynamic resizing context. */
 export type DynamicSizeBuilder = (encoder: BinaryEncoder) => void;
 
-/** Options for static `BinaryEncoder.withDynamicSize()` method. */
+/** Options for the static {@link BinaryEncoder.dynamicallySized} method. */
 export interface DynamicSizeBuilderWithOptions {
   /** If provided, the resulting encoder will have at least this many bytes */
   minimumSize?: number;
@@ -42,7 +42,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * Static initializers are also available:
    * - {@link BinaryEncoder.alloc}: Create a {@link BinaryEncoder} with a byte
    *   size, rather than a buffer.
-   * - {@link BinaryEncoder.withDynamicSize}: Create a {@link BinaryEncoder}
+   * - {@link BinaryEncoder.dynamicallySized}: Create a {@link BinaryEncoder}
    *   whose byte size grows as needed.
    * 
    * @param buffer Buffer to encode
@@ -84,7 +84,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * @param builder Function to run in a dynamic sizing context
    * @returns New BinaryEncoder created with dynamic size
    */
-  static withDynamicSize(builder: DynamicSizeBuilder): BinaryEncoder;
+  static dynamicallySized(builder: DynamicSizeBuilder): BinaryEncoder;
   /**
    * Creates a new BinaryEncoder whose size will dynamically grow to fit all of
    * the data that is written in the given function.
@@ -95,8 +95,8 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * @param options Configurations for creating the new BinaryEncoder
    * @returns New BinaryEncoder created with dynamic size
    */
-  static withDynamicSize(options: DynamicSizeBuilderWithOptions): BinaryEncoder;
-  static withDynamicSize(
+  static dynamicallySized(options: DynamicSizeBuilderWithOptions): BinaryEncoder;
+  static dynamicallySized(
     builderOrOptions: DynamicSizeBuilder | DynamicSizeBuilderWithOptions
   ): BinaryEncoder {
     const options = typeof builderOrOptions === "function" ? null : builderOrOptions;
@@ -104,7 +104,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
     const offset = options?.initialOffset ?? 0;
     const endianness = options?.endianness ?? "LE";
     const chunkSize = options?.chunkSize ?? _DEFAULT_CHUNK_SIZE;
-    // chunkSize will be validated in encoder.withDynamicSize()
+    // chunkSize will be validated in withDynamicSize()
     const minimumSize = options?.minimumSize ?? 0;
     if (!(Number.isInteger(minimumSize) && minimumSize >= 0))
       throw new RangeError("Minimum size must be a non-negative integer.");

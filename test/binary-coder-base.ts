@@ -376,7 +376,7 @@ export function describeBinaryCoderMethods(args: BinaryCoderMethodArgs) {
       expect(coder.offset).to.equal(2);
     });
 
-    it("[deprecated] should set the offset to the given bigint (< current)", () => {
+    it("should set the offset to the given bigint (< current) - [deprecated]", () => {
       const coder = args.createCoder(5, 4);
       expect(coder.offset).to.equal(4);
       coder.seek(2n);
@@ -390,7 +390,7 @@ export function describeBinaryCoderMethods(args: BinaryCoderMethodArgs) {
       expect(coder.offset).to.equal(4);
     });
 
-    it("[deprecated] should set the offset to the given bigint (> current)", () => {
+    it("should set the offset to the given bigint (> current) - [deprecated]", () => {
       const coder = args.createCoder(5, 2);
       expect(coder.offset).to.equal(2);
       coder.seek(4n);
@@ -404,7 +404,7 @@ export function describeBinaryCoderMethods(args: BinaryCoderMethodArgs) {
       expect(coder.offset).to.equal(2);
     });
 
-    it("[deprecated] should not change the offset when given the current offset bigint", () => {
+    it("should not change the offset when given the current offset bigint - [deprecated]", () => {
       const coder = args.createCoder(5, 2);
       expect(coder.offset).to.equal(2);
       coder.seek(2n);
@@ -436,7 +436,7 @@ export function describeBinaryCoderMethods(args: BinaryCoderMethodArgs) {
       expect(coder.offset).to.equal(4);
     });
 
-    it("[deprecated] should advance the offset by the given bigint", () => {
+    it("should advance the offset by the given bigint - [deprecated]", () => {
       const coder = args.createCoder(5);
       expect(coder.offset).to.equal(0);
       coder.skip(2n);
@@ -502,7 +502,7 @@ export function describeBinaryCoderMethods(args: BinaryCoderMethodArgs) {
 
   //#region Deprecated Methods
 
-  describe("[deprecated]#isEOF()", () => {
+  describe("#isEOF() - [deprecated]", () => {
     it("should return false at offset < 0", () => {
       const coder = args.createCoder(5, -1);
       expect(coder.isEOF()).to.be.false;
@@ -529,7 +529,7 @@ export function describeBinaryCoderMethods(args: BinaryCoderMethodArgs) {
     });
   });
 
-  describe("[deprecated]#savePos()", () => {
+  describe("#savePos() - [deprecated]", () => {
     it("should execute the given function", () => {
       const coder = args.createCoder(5);
       let fnRun = false;
@@ -558,7 +558,7 @@ export function describeBinaryCoderMethods(args: BinaryCoderMethodArgs) {
     });
   });
 
-  describe("[deprecated]#tell()", () => {
+  describe("#tell() - [deprecated]", () => {
     it("should return the given offset", () => {
       const coder = args.createCoder(5);
       expect(coder.tell()).to.equal(0);
