@@ -1,9 +1,10 @@
 {
   "name": "binary-coding",
   "description": "Zero-dependency utilities for reading/writing binary data in JavaScript.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "frankkulak",
   "license": "MIT",
+  "homepage": "https://frankkulak.com/binary-coding/",
   "repository": {
     "type": "git",
     "url": "https://github.com/frankkulak/binary-coding.git"
@@ -26,7 +27,7 @@
     "build": "npm run clean ; tsc ; node scripts/prepublish.cjs",
     "publish": "npm run build && sh scripts/publish.sh",
     "test": "mocha -r ts-node/register \"test/**/*.test.ts\"",
-    "docs:gen": "typedoc --out ./docs/v1.0.0",
+    "docs:gen": "typedoc --out ./docs/v1.0.1",
     "docs:deploy": "sh ./scripts/deploy-docs.sh"
   },
   "devDependencies": {
