@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>binary-coding</title>
+    <link rel="stylesheet" href="tsd-styles.css" />
+  </head>
+  <body
+    style="
+      padding-top: 1rem;
+      padding-left: 1rem;
+      padding-right: 1rem;
+      max-width: 1024px;
+      margin-left: auto;
+      margin-right: auto;
+    "
+  >
+    <h1>binary-coding</h1>
+    <p>
+      Zero-dependency utilities for reading/writing binary data in JavaScript.
+    </p>
+    <p>
+      <a
+        href="https://github.com/frankkulak/binary-coding/blob/main/CHANGELOG.md"
+        target="_blank"
+        >Changelog</a
+      >
+      |
+      <a
+        href="https://github.com/frankkulak/binary-coding/issues"
+        target="_blank"
+        >Issues</a
+      >
+      |
+      <a href="https://github.com/frankkulak/binary-coding" target="_blank"
+        >GitHub</a
+      >
+      |
+      <a href="https://npmjs.com/packages/binary-coding" target="_blank">npm</a>
+    </p>
+    <p style="font-size: 0.65rem; color: var(--color-text-aside)">
+      Created by
+      <a href="https://github.com/frankkulak" target="_blank">Frank Kulak</a> •
+      Docs generated with
+      <a href="https://typedoc.org/" target="_blank">TypeDoc</a>
+    </p>
+    <hr style="margin-top: 2rem; margin-bottom: 2rem" />
+    <h2>Documented Versions</h2>
+    <ul id="version-links-list"></ul>
+    <script>
+      (() => {
+        // setting theme
+        const tsdTheme = localStorage.getItem("tsd-theme");
+        document.documentElement.setAttribute("data-theme", tsdTheme ?? "dark");
+
+        // generating links
+        const versions = ["1.0.0"];
+        const versionLinksList = document.getElementById("version-links-list");
+        versions.forEach((version) => {
+          const li = document.createElement("li");
+          const a = document.createElement("a");
+          a.href = `./v${version}/`;
+          a.innerText = `v${version}`;
+          li.appendChild(a);
+          versionLinksList.appendChild(li);
+        });
+      })();
+    </script>
+  </body>
+</html>

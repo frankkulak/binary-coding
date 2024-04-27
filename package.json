@@ -26,7 +26,7 @@
     "build": "npm run clean ; tsc ; node scripts/prepublish.cjs",
     "publish": "npm run build && sh scripts/publish.sh",
     "test": "mocha -r ts-node/register \"test/**/*.test.ts\"",
-    "docs:gen": "typedoc",
+    "docs:gen": "typedoc --out ./docs/v1.0.0",
     "docs:deploy": ""
   },
   "devDependencies": {
