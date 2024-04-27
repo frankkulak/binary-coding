@@ -27,7 +27,7 @@
     "publish": "npm run build && sh scripts/publish.sh",
     "test": "mocha -r ts-node/register \"test/**/*.test.ts\"",
     "docs:gen": "typedoc --out ./docs/v1.0.0",
-    "docs:deploy": ""
+    "docs:deploy": "sh ./scripts/deploy-docs.sh"
   },
   "devDependencies": {
     "@types/chai": "^4.3.0",

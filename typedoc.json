@@ -2,7 +2,7 @@
   "$schema": "https://typedoc.org/schema.json",
   "entryPoints": ["./src/index.ts"],
   "sidebarLinks": {
-    "More Versions": "/docs",
+    "More Versions": "/binary-coding",
     "View on GitHub": "https://github.com/frankkulak/binary-coding",
     "View on npm": "https://npmjs.com/packages/binary-coding",
     "": ""
