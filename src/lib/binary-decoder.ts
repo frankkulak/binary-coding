@@ -1,6 +1,30 @@
 import BinaryCoderBase from "./binary-coder-base";
 import type { BufferReadBigIntMethod, BufferReadNumberMethod, Endianness } from "./types";
 
+//#region Types
+
+/**
+ * Specifies bit maskings to use when reading unsigned ints.
+ */
+export interface DecoderBitMaskings {
+  /**
+   * List of bit masks to use. Masks must add up to the total bit size of the
+   * data type that is being decoded, such as:
+   * ```ts
+   * // ok
+   * uint32({ bits: [1, 31] }); // 1 + 31 == 32
+   * uint64({ bits: [2, 2, 60] }); // 2 + 2 + 60 == 64
+   * 
+   * // exception!
+   * uint32({ bits: [1, 9] }); // 1 + 9 != 32
+   * uint64({ bits: [2, 2, 40] }); // 2 + 2 + 40 != 64
+   * ```
+   */
+  bits: number[];
+}
+
+//#endregion
+
 /**
  * Decodes binary data from a buffer.
  */
@@ -166,16 +190,40 @@ export default class BinaryDecoder extends BinaryCoderBase {
 
   //#region Numbers
 
-  private _number(methodName: BufferReadNumberMethod, numBytes: number): number {
-    const result = this.buffer[methodName](this.offset);
-    this.skip(numBytes);
-    return result;
+  private _number(
+    bytes: number,
+    method: BufferReadNumberMethod,
+    maskings?: DecoderBitMaskings
+  ): number | number[] {
+    const value = this.buffer[method](this.offset);
+    this.skip(bytes);
+    return maskings ? this._applyMaskings(bytes, value, maskings) : value;
   }
 
-  private _bigint(methodName: BufferReadBigIntMethod): bigint {
-    const result = this.buffer[methodName](this.offset);
+  private _bigint(
+    method: BufferReadBigIntMethod,
+    maskings?: DecoderBitMaskings
+  ): bigint | bigint[] {
+    const value = this.buffer[method](this.offset);
     this.skip(8);
-    return result;
+    return maskings ? this._applyMaskings(8, value, maskings) : value;
+  }
+
+  private _applyMaskings<T extends number | bigint>(
+    bytes: number,
+    value: T,
+    maskings: DecoderBitMaskings
+  ): T[] {
+    const bits = bytes * 8;
+    if (maskings.bits.reduce((a, b) => a + b) !== bits)
+      throw new Error(`Bit masks for ${bytes}-byte number must add to ${bits}`);
+    let remainingBits = 0;
+    return maskings.bits.map(numBits => {
+      const mask = ((1 << numBits) - 1) << (remainingBits - numBits);
+      const maskedValue = (value & (bytes < 8 ? mask : BigInt(mask)) as T) as T;
+      remainingBits -= numBits;
+      return maskedValue;
+    });
   }
 
   /**
@@ -184,8 +232,24 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * @returns The read UInt8.
    * @throws If buffer does not contain at least 1 more byte.
    */
-  uint8(): number {
-    return this._number("readUInt8", 1);
+  uint8(): number;
+  /**
+   * Reads an 8-bit unsigned integer, applies the given bit masks, and returns
+   * the masked values in an array. Consumes 1 byte.
+   * 
+   * ```ts
+   * // flag is the first bit, value is the remaining 7
+   * const [flag, value] = decoder.uint8({ bits: [1, 7] });
+   * ```
+   * 
+   * @param maskings Bit masks to apply to decoded value.
+   * @returns Array of values after applying bit masks to the read UInt8.
+   * @throws If buffer does not contain at least 1 more byte, or if bit masks
+   * do not add to 8.
+   */
+  uint8(maskings: DecoderBitMaskings): number[];
+  uint8(maskings?: DecoderBitMaskings): number | number[] {
+    return this._number(1, "readUInt8", maskings);
   }
 
   /**
@@ -194,11 +258,25 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * @returns The read UInt16.
    * @throws If buffer does not contain at least 2 more bytes.
    */
-  uint16(): number {
-    return this._number(
-      this._resolveEndian("readUInt16LE", "readUInt16BE"),
-      2
-    );
+  uint16(): number;
+  /**
+   * Reads a 16-bit unsigned integer, applies the given bit masks, and returns
+   * the masked values in an array. Consumes 2 bytes.
+   * 
+   * ```ts
+   * // flag is the first bit, value is the remaining 15
+   * const [flag, value] = decoder.uint16({ bits: [1, 15] });
+   * ```
+   * 
+   * @param maskings Bit masks to apply to decoded value.
+   * @returns Array of values after applying bit masks to the read UInt16.
+   * @throws If buffer does not contain at least 2 more bytes, or if bit masks
+   * do not add to 16.
+   */
+  uint16(maskings: DecoderBitMaskings): number[];
+  uint16(maskings?: DecoderBitMaskings): number | number[] {
+    const method = this._resolveEndian("readUInt16LE", "readUInt16BE");
+    return this._number(2, method, maskings);
   }
 
   /**
@@ -207,11 +285,25 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * @returns The read UInt32.
    * @throws If buffer does not contain at least 4 more bytes.
    */
-  uint32(): number {
-    return this._number(
-      this._resolveEndian("readUInt32LE", "readUInt32BE"),
-      4
-    );
+  uint32(): number;
+  /**
+   * Reads a 32-bit unsigned integer, applies the given bit masks, and returns
+   * the masked values in an array. Consumes 4 bytes.
+   * 
+   * ```ts
+   * // flag is the first bit, value is the remaining 31
+   * const [flag, value] = decoder.uint32({ bits: [1, 31] });
+   * ```
+   * 
+   * @param maskings Bit masks to apply to decoded value.
+   * @returns Array of values after applying bit masks to the read UInt32.
+   * @throws If buffer does not contain at least 4 more bytes, or if bit masks
+   * do not add to 32.
+   */
+  uint32(maskings: DecoderBitMaskings): number[];
+  uint32(maskings?: DecoderBitMaskings): number | number[] {
+    const method = this._resolveEndian("readUInt32LE", "readUInt32BE");
+    return this._number(4, method, maskings);
   }
 
   /**
@@ -220,10 +312,25 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * @returns The read UInt64.
    * @throws If buffer does not contain at least 8 more bytes.
    */
-  uint64(): bigint {
-    return this._bigint(
-      this._resolveEndian("readBigUInt64LE", "readBigUInt64BE")
-    );
+  uint64(): bigint;
+  /**
+   * Reads a 64-bit unsigned integer, applies the given bit masks, and returns
+   * the masked values in an array. Consumes 8 bytes.
+   * 
+   * ```ts
+   * // flag is the first bit, value is the remaining 63
+   * const [flag, value] = decoder.uint64({ bits: [1, 63] });
+   * ```
+   * 
+   * @param maskings Bit masks to apply to decoded value.
+   * @returns Array of values after applying bit masks to the read UInt64.
+   * @throws If buffer does not contain at least 8 more bytes, or if bit masks
+   * do not add to 64.
+   */
+  uint64(maskings: DecoderBitMaskings): bigint[];
+  uint64(maskings?: DecoderBitMaskings): bigint | bigint[] {
+    const method = this._resolveEndian("readBigUInt64LE", "readBigUInt64BE");
+    return this._bigint(method, maskings);
   }
 
   /**
@@ -233,7 +340,7 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * @throws If buffer does not contain at least 1 more byte.
    */
   int8(): number {
-    return this._number("readInt8", 1);
+    return this._number(1, "readInt8") as number;
   }
 
   /**
@@ -243,10 +350,8 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * @throws If buffer does not contain at least 2 more bytes.
    */
   int16(): number {
-    return this._number(
-      this._resolveEndian("readInt16LE", "readInt16BE"),
-      2
-    );
+    const method = this._resolveEndian("readInt16LE", "readInt16BE");
+    return this._number(2, method) as number;
   }
 
   /**
@@ -256,10 +361,8 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * @throws If buffer does not contain at least 4 more bytes.
    */
   int32(): number {
-    return this._number(
-      this._resolveEndian("readInt32LE", "readInt32BE"),
-      4
-    );
+    const method = this._resolveEndian("readInt32LE", "readInt32BE");
+    return this._number(4, method) as number;
   }
 
   /**
@@ -269,9 +372,8 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * @throws If buffer does not contain at least 8 more bytes.
    */
   int64(): bigint {
-    return this._bigint(
-      this._resolveEndian("readBigInt64LE", "readBigInt64BE")
-    );
+    const method = this._resolveEndian("readBigInt64LE", "readBigInt64BE");
+    return this._bigint(method) as bigint;
   }
 
   /**
@@ -281,10 +383,8 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * @throws If buffer does not contain at least 4 more bytes.
    */
   float(): number {
-    return this._number(
-      this._resolveEndian("readFloatLE", "readFloatBE"),
-      4
-    );
+    const method = this._resolveEndian("readFloatLE", "readFloatBE");
+    return this._number(4, method) as number;
   }
 
   /**
@@ -294,10 +394,8 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * @throws If buffer does not contain at least 8 more bytes.
    */
   double(): number {
-    return this._number(
-      this._resolveEndian("readDoubleLE", "readDoubleBE"),
-      8
-    );
+    const method = this._resolveEndian("readDoubleLE", "readDoubleBE");
+    return this._number(8, method) as number;
   }
 
   //#endregion Numbers

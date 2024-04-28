@@ -403,6 +403,8 @@ describe("BinaryDecoder", () => {
       methodBE: "writeUInt8",
       value: 0x12
     });
+
+    // TODO: tests for bit masking
   });
 
   describe("#uint16()", () => {
@@ -413,6 +415,8 @@ describe("BinaryDecoder", () => {
       methodBE: "writeUInt16BE",
       value: 0x1234
     });
+
+    // TODO: tests for bit masking
   });
 
   describe("#uint32()", () => {
@@ -423,6 +427,8 @@ describe("BinaryDecoder", () => {
       methodBE: "writeUInt32BE",
       value: 0x12345678
     });
+
+    // TODO: tests for bit masking
   });
 
   describe("#uint64()", () => {
@@ -433,6 +439,8 @@ describe("BinaryDecoder", () => {
       methodBE: "writeBigUInt64BE",
       value: 0x1234567890ABCDEFn
     });
+
+    // TODO: tests for bit masking
   });
 
   describe("#int8()", () => {
