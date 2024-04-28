@@ -14,7 +14,8 @@ function testNumberMethod(args: NumberMethodArgs<BinaryEncoder>) {
     if (args.floatEquality) {
       expect(actual).to.be.approximately(value as number, 0.00001);
     } else {
-      expect(actual).to.equal(value);
+      const expectedValue = args.bytes >= 8 ? BigInt(value) : value;
+      expect(actual).to.equal(expectedValue);
     }
   }
 
@@ -59,6 +60,185 @@ function testNumberMethod(args: NumberMethodArgs<BinaryEncoder>) {
       builder(encoder) {
         expect(encoder.byteLength).to.equal(1);
         encoder[args.name].call(encoder, args.value);
+        expect(encoder.byteLength).to.equal(args.bytes + 1);
+      }
+    });
+  });
+}
+
+function testNumberMethodWithBitMasks(args: NumberMethodArgs<BinaryEncoder>) {
+  const bits = args.bytes * 8;
+
+  it("should throw if masks list is empty", () => {
+    const encoder = BinaryEncoder.alloc(8);
+    expect(() => encoder[args.name].call(encoder, {
+      bits: [],
+      values: []
+    })).to.throw("Bit mask list cannot be empty");
+  });
+
+  it("should throw if a mask is negative", () => {
+    const encoder = BinaryEncoder.alloc(8);
+    expect(() => encoder[args.name].call(encoder, {
+      bits: [-1, bits + 1],
+      values: [0, 0]
+    })).to.throw("Bit masks must be positive integers");
+  });
+
+  it("should throw if a mask is zero", () => {
+    const encoder = BinaryEncoder.alloc(8);
+    expect(() => encoder[args.name].call(encoder, {
+      bits: [0, bits],
+      values: [0, 0]
+    })).to.throw("Bit masks must be positive integers");
+  });
+
+  it("should throw if a mask is not an integer", () => {
+    const encoder = BinaryEncoder.alloc(8);
+    expect(() => encoder[args.name].call(encoder, {
+      bits: [1.5, bits - 1.5],
+      values: [0, 0]
+    })).to.throw("Bit masks must be positive integers");
+  });
+
+  it(`should throw if sum of masks is < ${bits}`, () => {
+    const encoder = BinaryEncoder.alloc(8);
+    expect(() => encoder[args.name].call(encoder, {
+      bits: [bits - 1],
+      values: [0]
+    })).to.throw(/Bit masks for \d+-bit number must add to \d+/);
+  });
+
+  it(`should throw if sum of masks is > ${bits}`, () => {
+    const encoder = BinaryEncoder.alloc(8);
+    expect(() => encoder[args.name].call(encoder, {
+      bits: [bits + 1],
+      values: [0]
+    })).to.throw(/Bit masks for \d+-bit number must add to \d+/);
+  });
+
+  it("should throw if masks list > values list", () => {
+    const encoder = BinaryEncoder.alloc(8);
+    expect(() => encoder[args.name].call(encoder, {
+      bits: [1, bits - 1],
+      values: [0]
+    })).to.throw("Value must be provided for every bit mask");
+  });
+
+  it("should throw if masks list < values list", () => {
+    const encoder = BinaryEncoder.alloc(8);
+    expect(() => encoder[args.name].call(encoder, {
+      bits: [1, bits - 1],
+      values: [0, 0, 0]
+    })).to.throw("Value must be provided for every bit mask");
+  });
+
+  it("should throw if a value is negative", () => {
+    const encoder = BinaryEncoder.alloc(8);
+    expect(() => encoder[args.name].call(encoder, {
+      bits: [1, bits - 1],
+      values: [-1, 0]
+    })).to.throw("Values must be non-negative integers");
+  });
+
+  it("should throw if a value is not an integer", () => {
+    const encoder = BinaryEncoder.alloc(8);
+    expect(() => encoder[args.name].call(encoder, {
+      bits: [1, bits - 1],
+      values: [1.5, 0]
+    })).to.throw("Values must be non-negative integers");
+  });
+
+  it("should throw if a value does not fit in its corresponding mask", () => {
+    const encoder = BinaryEncoder.alloc(8);
+    expect(() => encoder[args.name].call(encoder, {
+      bits: [1, bits - 1],
+      values: [2, 0]
+    })).to.throw(/Value of \d+ does not fit in \d+ bits/);
+  });
+
+  const endianOptions: Endianness[] = ["LE", "BE"];
+  endianOptions.forEach((endianness) => {
+    const readMethod = endianness === "LE" ? args.methodLE : args.methodBE;
+
+    it(`should write the full ${args.name} value (1 mask) (${endianness})`, () => {
+      const encoder = BinaryEncoder.alloc(8, 0, endianness);
+      encoder[args.name].call(encoder, {
+        bits: [bits],
+        values: [args.value]
+      });
+      const actual = encoder.buffer[readMethod].call(encoder.buffer);
+      expect(BigInt(actual)).to.equal(BigInt(args.value));
+    });
+
+    it(`should mask all values correctly (2 masks) (${endianness})`, () => {
+      const encoder = BinaryEncoder.alloc(8, 0, endianness);
+      encoder[args.name].call(encoder, {
+        bits: [1, bits - 1],
+        values: [1, args.value]
+      });
+      const combined = BigInt(encoder.buffer[readMethod].call(encoder.buffer));
+      const bigBits = BigInt(bits);
+      const flag = combined >> (bigBits - 1n);
+      const actual = combined & ((1n << (bigBits - 1n)) - 1n);
+      expect(flag).to.equal(1n);
+      expect(actual).to.equal(BigInt(args.value));
+    });
+
+    it(`should mask all values correctly (3 masks) (${endianness})`, () => {
+      const encoder = BinaryEncoder.alloc(8, 0, endianness);
+      encoder[args.name].call(encoder, {
+        bits: [1, 2, bits - 3],
+        values: [1, 2, args.value]
+      });
+      const combined = BigInt(encoder.buffer[readMethod].call(encoder.buffer));
+      const bigBits = BigInt(bits);
+      const flag1 = combined >> (bigBits - 1n);
+      const flag2 = (combined >> (bigBits - 3n)) & 0b11n;
+      const actual = combined & ((1n << (bigBits - 3n)) - 1n);
+      expect(flag1).to.equal(1n);
+      expect(flag2).to.equal(2n);
+      expect(actual).to.equal(BigInt(args.value));
+    });
+  });
+
+  it("should write at the current offset", () => {
+    const encoder = BinaryEncoder.alloc(10, 2);
+    encoder[args.name].call(encoder, {
+      bits: [bits],
+      values: [args.value]
+    });
+    const actual = encoder.buffer[args.methodLE].call(encoder.buffer, 2);
+    expect(BigInt(actual)).to.equal(BigInt(args.value));
+  });
+
+  it(`should advance the offset by ${args.bytes}`, () => {
+    const encoder = BinaryEncoder.alloc(8);
+    encoder[args.name].call(encoder, {
+      bits: [1, bits - 1],
+      values: [0, 0]
+    });
+    expect(encoder.offset).to.equal(args.bytes);
+  });
+
+  it("should throw if going beyond buffer length", () => {
+    const encoder = BinaryEncoder.alloc(1, 1);
+    expect(() => encoder[args.name].call(encoder, {
+      bits: [1, bits - 1],
+      values: [0, 0]
+    })).to.throw();
+  });
+
+  it("should support dynamic sizing", () => {
+    BinaryEncoder.dynamicallySized({
+      chunkSize: 1,
+      initialOffset: 1,
+      builder(encoder) {
+        expect(encoder.byteLength).to.equal(1);
+        encoder[args.name].call(encoder, {
+          bits: [bits],
+          values: [args.value]
+        });
         expect(encoder.byteLength).to.equal(args.bytes + 1);
       }
     });
@@ -733,42 +913,92 @@ describe("BinaryEncoder", () => {
   //#region Numbers
 
   describe("#uint8()", () => {
-    testNumberMethod({
+    const args: NumberMethodArgs<BinaryEncoder> = {
       name: "uint8",
       bytes: 1,
       methodLE: "readUInt8",
       methodBE: "readUInt8",
       value: 0x12
+    };
+
+    context("given number argument", () => {
+      testNumberMethod(args);
+    });
+
+    context("given maskings argument", () => {
+      testNumberMethodWithBitMasks(args);
     });
   });
 
   describe("#uint16()", () => {
-    testNumberMethod({
+    const args: NumberMethodArgs<BinaryEncoder> = {
       name: "uint16",
       bytes: 2,
       methodLE: "readUInt16LE",
       methodBE: "readUInt16BE",
       value: 0x1234
+    };
+
+    context("given number argument", () => {
+      testNumberMethod(args);
+    });
+
+    context("given maskings argument", () => {
+      testNumberMethodWithBitMasks(args);
     });
   });
 
   describe("#uint32()", () => {
-    testNumberMethod({
+    const args: NumberMethodArgs<BinaryEncoder> = {
       name: "uint32",
       bytes: 4,
       methodLE: "readUInt32LE",
       methodBE: "readUInt32BE",
       value: 0x12345678
+    };
+
+    context("given number argument", () => {
+      testNumberMethod(args);
+    });
+
+    context("given maskings argument", () => {
+      testNumberMethodWithBitMasks(args);
     });
   });
 
   describe("#uint64()", () => {
-    testNumberMethod({
+    const args: Partial<NumberMethodArgs<BinaryEncoder>> = {
       name: "uint64",
       bytes: 8,
       methodLE: "readBigUInt64LE",
       methodBE: "readBigUInt64BE",
-      value: 0x1234567890ABCDEFn
+    };
+
+    const argsNumber = {
+      ...args,
+      value: 0x12345678,
+    } as NumberMethodArgs<BinaryEncoder>;
+
+    const argsBigInt = {
+      ...args,
+      value: 0x1234567890ABCDEFn,
+    } as NumberMethodArgs<BinaryEncoder>;
+
+    context("given number argument", () => {
+      testNumberMethod(argsNumber);
+    });
+
+    context("given bigint argument", () => {
+      testNumberMethod(argsBigInt);
+    });
+
+    context("given maskings argument with numbers", () => {
+      testNumberMethodWithBitMasks(argsNumber);
+    });
+
+    context("given maskings argument with bigints", () => {
+      // also tests mixure of numbers and bigints
+      testNumberMethodWithBitMasks(argsBigInt);
     });
   });
 

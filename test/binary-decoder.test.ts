@@ -58,6 +58,134 @@ function testNumberMethod(args: NumberMethodArgs<BinaryDecoder>) {
   });
 }
 
+function testNumberMethodWithBitMasks(args: NumberMethodArgs<BinaryDecoder>) {
+  const bits = args.bytes * 8;
+
+  it("should throw if masks list is empty", () => {
+    const buffer = Buffer.alloc(8);
+    const decoder = new BinaryDecoder(buffer);
+    expect(() => decoder[args.name].call(decoder, {
+      bits: []
+    })).to.throw("Bit mask list cannot be empty");
+  });
+
+  it("should throw if a mask is negative", () => {
+    const buffer = Buffer.alloc(8);
+    const decoder = new BinaryDecoder(buffer);
+    expect(() => decoder[args.name].call(decoder, {
+      bits: [-1, bits + 1]
+    })).to.throw("Bit masks must be positive integers");
+  });
+
+  it("should throw if a mask is zero", () => {
+    const buffer = Buffer.alloc(8);
+    const decoder = new BinaryDecoder(buffer);
+    expect(() => decoder[args.name].call(decoder, {
+      bits: [0, bits]
+    })).to.throw("Bit masks must be positive integers");
+  });
+
+  it("should throw if a mask is not an integer", () => {
+    const buffer = Buffer.alloc(8);
+    const decoder = new BinaryDecoder(buffer);
+    expect(() => decoder[args.name].call(decoder, {
+      bits: [1.5, bits - 1.5]
+    })).to.throw("Bit masks must be positive integers");
+  });
+
+  it(`should throw if sum of masks is < ${bits}`, () => {
+    const buffer = Buffer.alloc(8);
+    const decoder = new BinaryDecoder(buffer);
+    expect(() => decoder[args.name].call(decoder, {
+      bits: [bits - 1]
+    })).to.throw(/Bit masks for \d+-bit number must add to \d+/);
+  });
+
+  it(`should throw if sum of masks is > ${bits}`, () => {
+    const buffer = Buffer.alloc(8);
+    const decoder = new BinaryDecoder(buffer);
+    expect(() => decoder[args.name].call(decoder, {
+      bits: [bits + 1]
+    })).to.throw(/Bit masks for \d+-bit number must add to \d+/);
+  });
+
+  const endianOptions: Endianness[] = ["LE", "BE"];
+  endianOptions.forEach((endianness) => {
+    const writeMethod = endianness === "LE" ? args.methodLE : args.methodBE;
+
+    const addMasksToValue = (...masks: bigint[]) => {
+      if (typeof args.value === "number") {
+        return Number(BigInt(args.value) | masks.reduce((a, b) => a | b));
+      } else {
+        return args.value | BigInt(masks.reduce((a, b) => a | b));
+      }
+    };
+
+    it(`should return the full ${args.name} value (1 mask) (${endianness})`, () => {
+      const buffer = Buffer.alloc(8);
+      buffer[writeMethod].call(buffer, args.value);
+      const decoder = new BinaryDecoder(buffer, 0, endianness);
+      const [actual] = decoder[args.name].call(decoder, {
+        bits: [bits]
+      });
+      expect(actual).to.equal(args.value);
+    });
+
+    it(`should mask all values correctly (2 masks) (${endianness})`, () => {
+      const buffer = Buffer.alloc(8);
+      const mask = 1n << BigInt(bits - 1);
+      buffer[writeMethod].call(buffer, addMasksToValue(mask));
+      const decoder = new BinaryDecoder(buffer, 0, endianness);
+      const [flag, actual] = decoder[args.name].call(decoder, {
+        bits: [1, bits - 1]
+      });
+      expect(flag).to.equal(bits > 56 ? 1n : 1);
+      expect(actual).to.equal(args.value);
+    });
+
+    it(`should mask all values correctly (3 masks) (${endianness})`, () => {
+      const buffer = Buffer.alloc(8);
+      const mask1 = 1n << BigInt(bits - 1);
+      const mask2 = 2n << BigInt(bits - 3);
+      buffer[writeMethod].call(buffer, addMasksToValue(mask1, mask2));
+      const decoder = new BinaryDecoder(buffer, 0, endianness);
+      const [flag1, flag2, actual] = decoder[args.name].call(decoder, {
+        bits: [1, 2, bits - 3]
+      });
+      expect(flag1).to.equal(bits > 56 ? 1n : 1);
+      expect(flag2).to.equal(bits > 56 ? 2n : 2);
+      expect(actual).to.equal(args.value);
+    });
+  });
+
+  it("should read from the current offset", () => {
+    const buffer = Buffer.alloc(10);
+    buffer[args.methodLE].call(buffer, args.value, 2);
+    const decoder = new BinaryDecoder(buffer, 2);
+    const [actual] = decoder[args.name].call(decoder, {
+      bits: [bits]
+    });
+    expect(actual).to.equal(args.value);
+  });
+
+  it(`should advance the offset by ${args.bytes}`, () => {
+    const buffer = Buffer.alloc(8);
+    const decoder = new BinaryDecoder(buffer);
+    decoder[args.name].call(decoder, {
+      bits: [1, bits - 1]
+    });
+    expect(decoder.offset).to.equal(args.bytes);
+  });
+
+  it("should throw if going beyond buffer length", () => {
+    const buffer = Buffer.alloc(1);
+    const decoder = new BinaryDecoder(buffer, 1);
+    expect(() => decoder[args.name].call(decoder, {
+      bits: [1, bits - 1]
+    })).to.throw();
+  });
+}
+
 //#endregion
 
 describe("BinaryDecoder", () => {
@@ -396,42 +524,74 @@ describe("BinaryDecoder", () => {
   //#region Numbers
 
   describe("#uint8()", () => {
-    testNumberMethod({
+    const args: NumberMethodArgs<BinaryDecoder> = {
       name: "uint8",
       bytes: 1,
       methodLE: "writeUInt8",
       methodBE: "writeUInt8",
       value: 0x12
+    };
+
+    context("given no arguments", () => {
+      testNumberMethod(args);
+    });
+
+    context("given maskings argument", () => {
+      testNumberMethodWithBitMasks(args);
     });
   });
 
   describe("#uint16()", () => {
-    testNumberMethod({
+    const args: NumberMethodArgs<BinaryDecoder> = {
       name: "uint16",
       bytes: 2,
       methodLE: "writeUInt16LE",
       methodBE: "writeUInt16BE",
       value: 0x1234
+    };
+
+    context("given no arguments", () => {
+      testNumberMethod(args);
+    });
+
+    context("given maskings argument", () => {
+      testNumberMethodWithBitMasks(args);
     });
   });
 
   describe("#uint32()", () => {
-    testNumberMethod({
+    const args: NumberMethodArgs<BinaryDecoder> = {
       name: "uint32",
       bytes: 4,
       methodLE: "writeUInt32LE",
       methodBE: "writeUInt32BE",
       value: 0x12345678
+    };
+
+    context("given no arguments", () => {
+      testNumberMethod(args);
+    });
+
+    context("given maskings argument", () => {
+      testNumberMethodWithBitMasks(args);
     });
   });
 
   describe("#uint64()", () => {
-    testNumberMethod({
+    const args: NumberMethodArgs<BinaryDecoder> = {
       name: "uint64",
       bytes: 8,
       methodLE: "writeBigUInt64LE",
       methodBE: "writeBigUInt64BE",
       value: 0x1234567890ABCDEFn
+    };
+
+    context("given no arguments", () => {
+      testNumberMethod(args);
+    });
+
+    context("given maskings argument", () => {
+      testNumberMethodWithBitMasks(args);
     });
   });
 
