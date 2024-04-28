@@ -42,7 +42,8 @@ const version = decoder.uint16();
 ```
 
 **Quick Facts**
-- All the primitives you'd expect are supported: bytes, bools, chars, signed/unsigned 8/16/32/64-bit ints, floats, and doubles (as well as some other handy types, like null-terminated strings).
+- All the primitives you'd expect are supported: bytes, bools, chars, signed/unsigned 8/16/32/64-bit ints, floats, and doubles.
+- There are options for easily reading/writing more complex types, like null-terminated strings and bit-masked uints.
 - Both little and big endianness are supported, and you can switch between them.
 - The encoder/decoder automatically track the offset, but it can be manually set if needed.
 - The encoder supports dynamically growing as values are written, if needed.
