@@ -14,7 +14,8 @@ function testNumberMethod(args: NumberMethodArgs<BinaryEncoder>) {
     if (args.floatEquality) {
       expect(actual).to.be.approximately(value as number, 0.00001);
     } else {
-      expect(actual).to.equal(value);
+      const expectedValue = args.bytes >= 8 ? BigInt(value) : value;
+      expect(actual).to.equal(expectedValue);
     }
   }
 
@@ -733,43 +734,55 @@ describe("BinaryEncoder", () => {
   //#region Numbers
 
   describe("#uint8()", () => {
-    testNumberMethod({
-      name: "uint8",
-      bytes: 1,
-      methodLE: "readUInt8",
-      methodBE: "readUInt8",
-      value: 0x12
+    context("given number argument", () => {
+      testNumberMethod({
+        name: "uint8",
+        bytes: 1,
+        methodLE: "readUInt8",
+        methodBE: "readUInt8",
+        value: 0x12
+      });
     });
 
-    // TODO: test bit masks
+    context("given maskings argument", () => {
+      // TODO:
+    });
   });
 
   describe("#uint16()", () => {
-    testNumberMethod({
-      name: "uint16",
-      bytes: 2,
-      methodLE: "readUInt16LE",
-      methodBE: "readUInt16BE",
-      value: 0x1234
+    context("given number argument", () => {
+      testNumberMethod({
+        name: "uint16",
+        bytes: 2,
+        methodLE: "readUInt16LE",
+        methodBE: "readUInt16BE",
+        value: 0x1234
+      });
     });
 
-    // TODO: test bit masks
+    context("given maskings argument", () => {
+      // TODO:
+    });
   });
 
   describe("#uint32()", () => {
-    testNumberMethod({
-      name: "uint32",
-      bytes: 4,
-      methodLE: "readUInt32LE",
-      methodBE: "readUInt32BE",
-      value: 0x12345678
+    context("given number argument", () => {
+      testNumberMethod({
+        name: "uint32",
+        bytes: 4,
+        methodLE: "readUInt32LE",
+        methodBE: "readUInt32BE",
+        value: 0x12345678
+      });
     });
 
-    // TODO: test bit masks
+    context("given maskings argument", () => {
+      // TODO:
+    });
   });
 
   describe("#uint64()", () => {
-    context("given a number", () => {
+    context("given number argument", () => {
       testNumberMethod({
         name: "uint64",
         bytes: 8,
@@ -777,11 +790,9 @@ describe("BinaryEncoder", () => {
         methodBE: "readBigUInt64BE",
         value: 0x12345678
       });
-
-      // TODO: test bit masks
     });
 
-    context("given a bigint", () => {
+    context("given bigint argument", () => {
       testNumberMethod({
         name: "uint64",
         bytes: 8,
@@ -789,8 +800,10 @@ describe("BinaryEncoder", () => {
         methodBE: "readBigUInt64BE",
         value: 0x1234567890ABCDEFn
       });
+    });
 
-      // TODO: test bit masks
+    context("given maskings argument", () => {
+      // TODO:
     });
   });
 

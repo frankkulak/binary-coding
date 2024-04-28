@@ -396,51 +396,67 @@ describe("BinaryDecoder", () => {
   //#region Numbers
 
   describe("#uint8()", () => {
-    testNumberMethod({
-      name: "uint8",
-      bytes: 1,
-      methodLE: "writeUInt8",
-      methodBE: "writeUInt8",
-      value: 0x12
+    context("given no arguments", () => {
+      testNumberMethod({
+        name: "uint8",
+        bytes: 1,
+        methodLE: "writeUInt8",
+        methodBE: "writeUInt8",
+        value: 0x12
+      });
     });
 
-    // TODO: tests for bit masking
+    context("given maskings argument", () => {
+      // TODO: tests for bit masking
+    });
   });
 
   describe("#uint16()", () => {
-    testNumberMethod({
-      name: "uint16",
-      bytes: 2,
-      methodLE: "writeUInt16LE",
-      methodBE: "writeUInt16BE",
-      value: 0x1234
+    context("given no arguments", () => {
+      testNumberMethod({
+        name: "uint16",
+        bytes: 2,
+        methodLE: "writeUInt16LE",
+        methodBE: "writeUInt16BE",
+        value: 0x1234
+      });
     });
 
-    // TODO: tests for bit masking
+    context("given maskings argument", () => {
+      // TODO: tests for bit masking
+    });
   });
 
   describe("#uint32()", () => {
-    testNumberMethod({
-      name: "uint32",
-      bytes: 4,
-      methodLE: "writeUInt32LE",
-      methodBE: "writeUInt32BE",
-      value: 0x12345678
+    context("given no arguments", () => {
+      testNumberMethod({
+        name: "uint32",
+        bytes: 4,
+        methodLE: "writeUInt32LE",
+        methodBE: "writeUInt32BE",
+        value: 0x12345678
+      });
     });
 
-    // TODO: tests for bit masking
+    context("given maskings argument", () => {
+      // TODO: tests for bit masking
+    });
   });
 
   describe("#uint64()", () => {
-    testNumberMethod({
-      name: "uint64",
-      bytes: 8,
-      methodLE: "writeBigUInt64LE",
-      methodBE: "writeBigUInt64BE",
-      value: 0x1234567890ABCDEFn
+    context("given no arguments", () => {
+      testNumberMethod({
+        name: "uint64",
+        bytes: 8,
+        methodLE: "writeBigUInt64LE",
+        methodBE: "writeBigUInt64BE",
+        value: 0x1234567890ABCDEFn
+      });
     });
 
-    // TODO: tests for bit masking
+    context("given maskings argument", () => {
+      // TODO: tests for bit masking
+    });
   });
 
   describe("#int8()", () => {
