@@ -2,6 +2,8 @@
 
 Zero-dependency utilities for reading/writing binary data in JavaScript.
 
+View full documentation at [frankkulak.com/binary-coding](https://frankkulak.com/binary-coding/).
+
 **Notes**
 - This package is for Node, but is compatible with [browserify](https://www.npmjs.com/package/browserify).
 - This package is a replacement for [@s4tk/encoding](https://www.npmjs.com/package/@s4tk/encoding), and is completely backwards compatible with it (some methods are deprecated, but still work, so you just have to swap out imports).
