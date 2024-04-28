@@ -740,6 +740,8 @@ describe("BinaryEncoder", () => {
       methodBE: "readUInt8",
       value: 0x12
     });
+
+    // TODO: test bit masks
   });
 
   describe("#uint16()", () => {
@@ -750,6 +752,8 @@ describe("BinaryEncoder", () => {
       methodBE: "readUInt16BE",
       value: 0x1234
     });
+
+    // TODO: test bit masks
   });
 
   describe("#uint32()", () => {
@@ -760,15 +764,33 @@ describe("BinaryEncoder", () => {
       methodBE: "readUInt32BE",
       value: 0x12345678
     });
+
+    // TODO: test bit masks
   });
 
   describe("#uint64()", () => {
-    testNumberMethod({
-      name: "uint64",
-      bytes: 8,
-      methodLE: "readBigUInt64LE",
-      methodBE: "readBigUInt64BE",
-      value: 0x1234567890ABCDEFn
+    context("given a number", () => {
+      testNumberMethod({
+        name: "uint64",
+        bytes: 8,
+        methodLE: "readBigUInt64LE",
+        methodBE: "readBigUInt64BE",
+        value: 0x12345678
+      });
+
+      // TODO: test bit masks
+    });
+
+    context("given a bigint", () => {
+      testNumberMethod({
+        name: "uint64",
+        bytes: 8,
+        methodLE: "readBigUInt64LE",
+        methodBE: "readBigUInt64BE",
+        value: 0x1234567890ABCDEFn
+      });
+
+      // TODO: test bit masks
     });
   });
 

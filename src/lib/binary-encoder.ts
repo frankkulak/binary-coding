@@ -1,4 +1,5 @@
 import BinaryCoderBase from "./binary-coder-base";
+import { BitMasking, type EncoderBitMaskings } from "./bit-masking";
 import type { BufferWriteBigIntMethod, BufferWriteNumberMethod, Endianness } from "./types";
 
 const _DEFAULT_CHUNK_SIZE = 256;
@@ -230,14 +231,36 @@ export default class BinaryEncoder extends BinaryCoderBase {
 
   //#region Numbers
 
-  private _number(bytes: number, value: number, methodName: BufferWriteNumberMethod) {
+
+  private _number(
+    bytes: number,
+    method: BufferWriteNumberMethod,
+    valueOrMaskings: number | EncoderBitMaskings<number>
+  ) {
     this._resizeIfDynamic(bytes);
-    this._setOffset(this.buffer[methodName](value, this.offset));
+    let value: number;
+    if (typeof valueOrMaskings === "number") {
+      value = valueOrMaskings;
+    } else {
+      const { bits: masks, values } = valueOrMaskings;
+      value = BitMasking.encode(bytes * 8, masks, values);
+    }
+    this._setOffset(this.buffer[method](value, this.offset));
   }
 
-  private _bigint(value: bigint, methodName: BufferWriteBigIntMethod) {
+  private _bigint(
+    method: BufferWriteBigIntMethod,
+    valueOrMaskings: number | bigint | EncoderBitMaskings<number | bigint>
+  ) {
     this._resizeIfDynamic(8);
-    this._setOffset(this.buffer[methodName](value, this.offset));
+    let value: number | bigint;
+    if (typeof valueOrMaskings === "object") {
+      const { bits: masks, values } = valueOrMaskings;
+      value = BitMasking.encode(64, masks, values);
+    } else {
+      value = valueOrMaskings;
+    }
+    this._setOffset(this.buffer[method](BigInt(value), this.offset));
   }
 
   /**
@@ -246,8 +269,23 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * @param value The UInt8 to write.
    * @throws If buffer cannot fit 1 more byte.
    */
-  uint8(value: number) {
-    this._number(1, value, "writeUInt8");
+  uint8(value: number): void;
+  /**
+   * Combines the given values using the given bit masks and writes them as a
+   * single 8-bit unsigned integer. Consumes 1 byte.
+   * 
+   * ```ts
+   * // writing a flag and value
+   * encoder.uint8({ bits: [1, 7], values: [1, 50] });
+   * ```
+   * 
+   * @param maskings Values and the bit masks to use when combining them.
+   * @throws If buffer cannot fit 1 more byte, if bit masks are not valid, or if
+   * values cannot fit into bit masks.
+   */
+  uint8(maskings: EncoderBitMaskings<number>): void;
+  uint8(valueOrMaskings: number | EncoderBitMaskings<number>) {
+    this._number(1, "writeUInt8", valueOrMaskings);
   }
 
   /**
@@ -256,12 +294,24 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * @param value The UInt16 to write.
    * @throws If buffer cannot fit 2 more bytes.
    */
-  uint16(value: number) {
-    this._number(
-      2,
-      value,
-      this._resolveEndian("writeUInt16LE", "writeUInt16BE")
-    );
+  uint16(value: number): void;
+  /**
+   * Combines the given values using the given bit masks and writes them as a
+   * single 16-bit unsigned integer. Consumes 2 bytes.
+   * 
+   * ```ts
+   * // writing a flag and value
+   * encoder.uint16({ bits: [1, 15], values: [1, 50] });
+   * ```
+   * 
+   * @param maskings Values and the bit masks to use when combining them.
+   * @throws If buffer cannot fit 2 more bytes, if bit masks are not valid, or
+   * if values cannot fit into bit masks.
+   */
+  uint16(maskings: EncoderBitMaskings<number>): void;
+  uint16(valueOrMaskings: number | EncoderBitMaskings<number>) {
+    const method = this._resolveEndian("writeUInt16LE", "writeUInt16BE");
+    this._number(2, method, valueOrMaskings);
   }
 
   /**
@@ -270,12 +320,24 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * @param value The UInt32 to write.
    * @throws If buffer cannot fit 4 more bytes.
    */
-  uint32(value: number) {
-    this._number(
-      4,
-      value,
-      this._resolveEndian("writeUInt32LE", "writeUInt32BE")
-    );
+  uint32(value: number): void;
+  /**
+   * Combines the given values using the given bit masks and writes them as a
+   * single 32-bit unsigned integer. Consumes 4 bytes.
+   * 
+   * ```ts
+   * // writing a flag and value
+   * encoder.uint32({ bits: [1, 31], values: [1, 50] });
+   * ```
+   * 
+   * @param maskings Values and the bit masks to use when combining them.
+   * @throws If buffer cannot fit 4 more bytes, if bit masks are not valid, or
+   * if values cannot fit into bit masks.
+   */
+  uint32(maskings: EncoderBitMaskings<number>): void;
+  uint32(valueOrMaskings: number | EncoderBitMaskings<number>) {
+    const method = this._resolveEndian("writeUInt32LE", "writeUInt32BE");
+    this._number(4, method, valueOrMaskings);
   }
 
   /**
@@ -284,11 +346,24 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * @param value The UInt64 to write.
    * @throws If buffer cannot fit 8 more bytes.
    */
-  uint64(value: number | bigint) {
-    this._bigint(
-      BigInt(value),
-      this._resolveEndian("writeBigUInt64LE", "writeBigUInt64BE")
-    );
+  uint64(value: number | bigint): void;
+  /**
+   * Combines the given values using the given bit masks and writes them as a
+   * single 64-bit unsigned integer. Consumes 8 bytes.
+   * 
+   * ```ts
+   * // writing a flag and value (mixing numbers and bigints is fine)
+   * encoder.uint64({ bits: [1, 63], values: [1, 50n] });
+   * ```
+   * 
+   * @param maskings Values and the bit masks to use when combining them.
+   * @throws If buffer cannot fit 8 more bytes, if bit masks are not valid, or
+   * if values cannot fit into bit masks.
+   */
+  uint64(maskings: EncoderBitMaskings<number | bigint>): void;
+  uint64(valueOrMaskings: number | bigint | EncoderBitMaskings<number | bigint>) {
+    const method = this._resolveEndian("writeBigUInt64LE", "writeBigUInt64BE");
+    this._bigint(method, valueOrMaskings);
   }
 
   /**
@@ -298,7 +373,7 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * @throws If buffer cannot fit 1 more byte.
    */
   int8(value: number) {
-    this._number(1, value, "writeInt8");
+    this._number(1, "writeInt8", value);
   }
 
   /**
@@ -308,11 +383,8 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * @throws If buffer cannot fit 2 more bytes.
    */
   int16(value: number) {
-    this._number(
-      2,
-      value,
-      this._resolveEndian("writeInt16LE", "writeInt16BE")
-    );
+    const method = this._resolveEndian("writeInt16LE", "writeInt16BE");
+    this._number(2, method, value);
   }
 
   /**
@@ -322,11 +394,8 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * @throws If buffer cannot fit 4 more bytes.
    */
   int32(value: number) {
-    this._number(
-      4,
-      value,
-      this._resolveEndian("writeInt32LE", "writeInt32BE")
-    );
+    const method = this._resolveEndian("writeInt32LE", "writeInt32BE");
+    this._number(4, method, value);
   }
 
   /**
@@ -336,10 +405,8 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * @throws If buffer cannot fit 8 more bytes.
    */
   int64(value: number | bigint) {
-    this._bigint(
-      BigInt(value),
-      this._resolveEndian("writeBigInt64LE", "writeBigInt64BE")
-    );
+    const method = this._resolveEndian("writeBigInt64LE", "writeBigInt64BE");
+    this._bigint(method, BigInt(value));
   }
 
   /**
@@ -349,11 +416,8 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * @throws If buffer cannot fit 4 more bytes.
    */
   float(value: number) {
-    this._number(
-      4,
-      value,
-      this._resolveEndian("writeFloatLE", "writeFloatBE")
-    );
+    const method = this._resolveEndian("writeFloatLE", "writeFloatBE");
+    this._number(4, method, value);
   }
 
   /**
@@ -363,11 +427,8 @@ export default class BinaryEncoder extends BinaryCoderBase {
    * @throws If buffer cannot fit 8 more bytes.
    */
   double(value: number) {
-    this._number(
-      8,
-      value,
-      this._resolveEndian("writeDoubleLE", "writeDoubleBE")
-    );
+    const method = this._resolveEndian("writeDoubleLE", "writeDoubleBE");
+    this._number(8, method, value);
   }
 
   //#endregion Numbers

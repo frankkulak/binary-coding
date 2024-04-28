@@ -1,29 +1,6 @@
 import BinaryCoderBase from "./binary-coder-base";
+import { BitMasking, type DecoderBitMaskings } from "./bit-masking";
 import type { BufferReadBigIntMethod, BufferReadNumberMethod, Endianness } from "./types";
-
-//#region Types
-
-/**
- * Specifies bit maskings to use when reading unsigned ints.
- */
-export interface DecoderBitMaskings {
-  /**
-   * List of bit masks to use. Masks must add up to the total bit size of the
-   * data type that is being decoded, such as:
-   * ```ts
-   * // ok
-   * uint32({ bits: [1, 31] }); // 1 + 31 == 32
-   * uint64({ bits: [2, 2, 60] }); // 2 + 2 + 60 == 64
-   * 
-   * // exception!
-   * uint32({ bits: [1, 9] }); // 1 + 9 != 32
-   * uint64({ bits: [2, 2, 40] }); // 2 + 2 + 40 != 64
-   * ```
-   */
-  bits: number[];
-}
-
-//#endregion
 
 /**
  * Decodes binary data from a buffer.
@@ -197,7 +174,8 @@ export default class BinaryDecoder extends BinaryCoderBase {
   ): number | number[] {
     const value = this.buffer[method](this.offset);
     this.skip(bytes);
-    return maskings ? this._applyMaskings(bytes, value, maskings) : value;
+    if (!maskings) return value;
+    return BitMasking.decode(bytes * 8, maskings.bits, value);
   }
 
   private _bigint(
@@ -206,24 +184,8 @@ export default class BinaryDecoder extends BinaryCoderBase {
   ): bigint | bigint[] {
     const value = this.buffer[method](this.offset);
     this.skip(8);
-    return maskings ? this._applyMaskings(8, value, maskings) : value;
-  }
-
-  private _applyMaskings<T extends number | bigint>(
-    bytes: number,
-    value: T,
-    maskings: DecoderBitMaskings
-  ): T[] {
-    const bits = bytes * 8;
-    if (maskings.bits.reduce((a, b) => a + b) !== bits)
-      throw new Error(`Bit masks for ${bytes}-byte number must add to ${bits}`);
-    let remainingBits = 0;
-    return maskings.bits.map(numBits => {
-      const mask = ((1 << numBits) - 1) << (remainingBits - numBits);
-      const maskedValue = (value & (bytes < 8 ? mask : BigInt(mask)) as T) as T;
-      remainingBits -= numBits;
-      return maskedValue;
-    });
+    if (!maskings) return value;
+    return BitMasking.decode(64, maskings.bits, value);
   }
 
   /**
@@ -245,7 +207,7 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * @param maskings Bit masks to apply to decoded value.
    * @returns Array of values after applying bit masks to the read UInt8.
    * @throws If buffer does not contain at least 1 more byte, or if bit masks
-   * do not add to 8.
+   * are not valid.
    */
   uint8(maskings: DecoderBitMaskings): number[];
   uint8(maskings?: DecoderBitMaskings): number | number[] {
@@ -271,7 +233,7 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * @param maskings Bit masks to apply to decoded value.
    * @returns Array of values after applying bit masks to the read UInt16.
    * @throws If buffer does not contain at least 2 more bytes, or if bit masks
-   * do not add to 16.
+   * are not valid.
    */
   uint16(maskings: DecoderBitMaskings): number[];
   uint16(maskings?: DecoderBitMaskings): number | number[] {
@@ -298,7 +260,7 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * @param maskings Bit masks to apply to decoded value.
    * @returns Array of values after applying bit masks to the read UInt32.
    * @throws If buffer does not contain at least 4 more bytes, or if bit masks
-   * do not add to 32.
+   * are not valid.
    */
   uint32(maskings: DecoderBitMaskings): number[];
   uint32(maskings?: DecoderBitMaskings): number | number[] {
@@ -325,7 +287,7 @@ export default class BinaryDecoder extends BinaryCoderBase {
    * @param maskings Bit masks to apply to decoded value.
    * @returns Array of values after applying bit masks to the read UInt64.
    * @throws If buffer does not contain at least 8 more bytes, or if bit masks
-   * do not add to 64.
+   * are not valid.
    */
   uint64(maskings: DecoderBitMaskings): bigint[];
   uint64(maskings?: DecoderBitMaskings): bigint | bigint[] {
