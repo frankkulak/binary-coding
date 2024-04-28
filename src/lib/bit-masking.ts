@@ -48,16 +48,15 @@ export interface EncoderBitMaskings<ValueType extends number | bigint> extends B
  * Utilities for bit masking.
  */
 export namespace BitMasking {
-  const _BIGINT_THRESHOLD = 56;
-
   /**
-   * TODO:
+   * Splits the given value into multiple by applying the given bit masks.
    * 
    * @param bits Number of bits this number fits into.
    * @param masks List of bit masks to apply.
    * @param value Value to apply bit masks to.
    * @returns List of values after applying masks to given value.
-   * @throws TODO:
+   * @throws If masks is empty, doesn't sum to bits, or contains any numbers
+   * that aren't positive integers.
    */
   export function decode<T extends number | bigint>(
     bits: number,
@@ -80,13 +79,16 @@ export namespace BitMasking {
   }
 
   /**
-   * TODO:
+   * Combines the given values into one by applying the given bit masks.
    * 
    * @param bits Number of bits this number fits into.
    * @param masks List of bit masks to apply.
    * @param values Values to apply bit masks to.
    * @returns Result of combining the given values with the given bit masks.
-   * @throws TODO:
+   * @throws If masks is empty, doesn't sum to bits, or contains any numbers
+   * that aren't positive integers. Also if length of values != length of masks,
+   * any values don't fit in their bit masks, or if any values are not positive
+   * integers/bigints.
    */
   export function encode<T extends number | bigint>(
     bits: number,
@@ -100,16 +102,10 @@ export namespace BitMasking {
     let combinedValue = 0n;
     let remainingBits = BigInt(bits);
     values.forEach((value, i) => {
-      const bigValue = BigInt(value);
-      const bigNumBits = BigInt(masks[i]);
-      const bitShift = remainingBits - bigNumBits;
-      const shifted = bigValue << bitShift;
-      combinedValue += shifted;
-      remainingBits -= bigNumBits;
+      remainingBits -= BigInt(masks[i]);
+      combinedValue += BigInt(value) << remainingBits;
     });
-    return (bits >= _BIGINT_THRESHOLD
-      ? combinedValue
-      : Number(combinedValue)) as T;
+    return (bits >= 56 ? combinedValue : Number(combinedValue)) as T;
   }
 
   function _validateMasks(bits: number, masks: number[]) {
@@ -134,7 +130,7 @@ export namespace BitMasking {
     values.forEach((value, i) => {
       const bigValue = BigInt(value);
       const mask = BigInt(masks[i]);
-      if (bigValue > ((1n << mask) - 1n)) // FIXME: types & sizing of vars here
+      if (bigValue > ((1n << mask) - 1n))
         throw new Error(`Value of ${value} does not fit in ${mask} bits`);
     });
   }
