@@ -11,7 +11,7 @@ interface BitMaskings {
    * 
    * // exception!
    * uint32({ bits: [1, 9] }); // 1 + 9 != 32
-   * uint64({ bits: [2, 2, 40] }); // 2 + 2 + 40 != 64
+   * uint64({ bits: [2, 2, 64] }); // 2 + 2 + 64 != 64
    * ```
   */
   bits: number[];
@@ -31,12 +31,12 @@ export interface EncoderBitMaskings<ValueType extends number | bigint> extends B
    * restriction they correspond with, such as:
    * ```ts
    * // ok
-   * uint32({ bits: [1, ...], values: [1, ...] }); // 1 fits in 1 bit
-   * uint64({ bits: [4, ...], values: [10, ...] }); // 10 fits in 4 bits
+   * uint32({ bits: [1, …], values: [1, …] }); // 1 fits in 1 bit
+   * uint64({ bits: [4, …], values: [10, …] }); // 10 fits in 4 bits
    * 
    * // exception!
-   * uint32({ bits: [1, ...], values: [2, ...] }); // 2 does NOT fit in 1 bit
-   * uint64({ bits: [2, ...], values: [10, ...] }); // 10 does NOT fit in 2 bits
+   * uint32({ bits: [1, …], values: [2, …] }); // 2 does NOT fit in 1 bit
+   * uint64({ bits: [2, …], values: [10, …] }); // 10 does NOT fit in 2 bits
    * ```
    */
   values: ValueType[];
@@ -65,13 +65,15 @@ export namespace BitMasking {
     value: T
   ): T[] {
     _validateMasks(bits, masks);
-    let remainingBits = bits;
-    const useBigInt = bits >= _BIGINT_THRESHOLD;
+    const isBig = typeof value === 'bigint';
+    const bigValue = isBig ? value : BigInt(value);
+    let remainingBits = BigInt(bits);
     return masks.map(numBits => {
-      const mask = ((1 << numBits) - 1) << (remainingBits - numBits);
-      const maskedValue = (value & (useBigInt ? BigInt(mask) : mask) as T) as T;
-      remainingBits -= numBits;
-      return maskedValue;
+      const bigNumBits = BigInt(numBits);
+      remainingBits -= bigNumBits;
+      const mask = ((1n << bigNumBits) - 1n) << remainingBits;
+      const segmentValue = (bigValue & mask) >> remainingBits;
+      return (isBig ? segmentValue : Number(segmentValue)) as T;
     });
   }
 
@@ -125,7 +127,7 @@ export namespace BitMasking {
       throw new Error("Values must be non-negative integers");
     values.forEach((value, i) => {
       const mask = masks[i];
-      if (value > ((1 << mask) - 1))
+      if (value > ((1 << mask) - 1)) // FIXME: types & sizing of vars here
         throw new Error(`Value of ${value} does not fit in ${mask} bits`);
     });
   }
