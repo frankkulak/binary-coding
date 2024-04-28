@@ -125,7 +125,9 @@ function testNumberMethodWithBitMasks(args: NumberMethodArgs<BinaryDecoder>) {
       const buffer = Buffer.alloc(8);
       buffer[writeMethod].call(buffer, args.value);
       const decoder = new BinaryDecoder(buffer, 0, endianness);
-      const [actual] = decoder[args.name].call(decoder, { bits: [bits] });
+      const [actual] = decoder[args.name].call(decoder, {
+        bits: [bits]
+      });
       expect(actual).to.equal(args.value);
     });
 
@@ -134,7 +136,9 @@ function testNumberMethodWithBitMasks(args: NumberMethodArgs<BinaryDecoder>) {
       const mask = 1n << BigInt(bits - 1);
       buffer[writeMethod].call(buffer, addMasksToValue(mask));
       const decoder = new BinaryDecoder(buffer, 0, endianness);
-      const [flag, actual] = decoder[args.name].call(decoder, { bits: [1, bits - 1] });
+      const [flag, actual] = decoder[args.name].call(decoder, {
+        bits: [1, bits - 1]
+      });
       expect(flag).to.equal(bits > 56 ? 1n : 1);
       expect(actual).to.equal(args.value);
     });
@@ -145,7 +149,9 @@ function testNumberMethodWithBitMasks(args: NumberMethodArgs<BinaryDecoder>) {
       const mask2 = 2n << BigInt(bits - 3);
       buffer[writeMethod].call(buffer, addMasksToValue(mask1, mask2));
       const decoder = new BinaryDecoder(buffer, 0, endianness);
-      const [flag1, flag2, actual] = decoder[args.name].call(decoder, { bits: [1, 2, bits - 3] });
+      const [flag1, flag2, actual] = decoder[args.name].call(decoder, {
+        bits: [1, 2, bits - 3]
+      });
       expect(flag1).to.equal(bits > 56 ? 1n : 1);
       expect(flag2).to.equal(bits > 56 ? 2n : 2);
       expect(actual).to.equal(args.value);
@@ -156,21 +162,27 @@ function testNumberMethodWithBitMasks(args: NumberMethodArgs<BinaryDecoder>) {
     const buffer = Buffer.alloc(10);
     buffer[args.methodLE].call(buffer, args.value, 2);
     const decoder = new BinaryDecoder(buffer, 2);
-    const [actual] = decoder[args.name].call(decoder, { bits: [bits] });
+    const [actual] = decoder[args.name].call(decoder, {
+      bits: [bits]
+    });
     expect(actual).to.equal(args.value);
   });
 
   it(`should advance the offset by ${args.bytes}`, () => {
     const buffer = Buffer.alloc(8);
     const decoder = new BinaryDecoder(buffer);
-    decoder[args.name].call(decoder, { bits: [1, bits - 1] });
+    decoder[args.name].call(decoder, {
+      bits: [1, bits - 1]
+    });
     expect(decoder.offset).to.equal(args.bytes);
   });
 
   it("should throw if going beyond buffer length", () => {
     const buffer = Buffer.alloc(1);
     const decoder = new BinaryDecoder(buffer, 1);
-    expect(() => decoder[args.name].call(decoder, { bits: [1, bits - 1] })).to.throw();
+    expect(() => decoder[args.name].call(decoder, {
+      bits: [1, bits - 1]
+    })).to.throw();
   });
 }
 

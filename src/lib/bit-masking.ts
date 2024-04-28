@@ -64,6 +64,8 @@ export namespace BitMasking {
     masks: number[],
     value: T
   ): T[] {
+    // Important: Do all bit math as bigints; numbers are treated as Int32s,
+    // therefore UInt32s become signed at 32 bits and UInt64s lose precision.
     _validateMasks(bits, masks);
     const isBig = typeof value === 'bigint';
     const bigValue = isBig ? value : BigInt(value);
@@ -91,21 +93,23 @@ export namespace BitMasking {
     masks: number[],
     values: T[]
   ): T {
+    // Important: Do all bit math as bigints; numbers are treated as Int32s,
+    // therefore UInt32s become signed at 32 bits and UInt64s lose precision.
     _validateMasks(bits, masks);
     _validateValues(masks, values);
-    const useBigInt = bits >= _BIGINT_THRESHOLD;
-    let combinedValue = (useBigInt ? 0n : 0) as T;
-    let remainingBits = bits;
+    let combinedValue = 0n;
+    let remainingBits = BigInt(bits);
     values.forEach((value, i) => {
-      const numBits = masks[i];
-      const bitShift = remainingBits - numBits;
-      // FIXME: potential issue here, value could be number in 64 bits
-      const shifted = (value << ((useBigInt ? BigInt(bitShift) : bitShift) as T)) as T;
-      //@ts-ignore T and T are guaranteed to be the same type here
+      const bigValue = BigInt(value);
+      const bigNumBits = BigInt(masks[i]);
+      const bitShift = remainingBits - bigNumBits;
+      const shifted = bigValue << bitShift;
       combinedValue += shifted;
-      remainingBits -= numBits;
+      remainingBits -= bigNumBits;
     });
-    return combinedValue;
+    return (bits >= _BIGINT_THRESHOLD
+      ? combinedValue
+      : Number(combinedValue)) as T;
   }
 
   function _validateMasks(bits: number, masks: number[]) {
@@ -123,11 +127,14 @@ export namespace BitMasking {
   ) {
     if (values.length !== masks.length)
       throw new Error("Value must be provided for every bit mask");
-    if (values.some(value => !(Number.isInteger(value) && value >= 0)))
+    const isInt = (n: number | bigint) =>
+      typeof n === "bigint" || Number.isInteger(n);
+    if (values.some(value => !(isInt(value) && value >= 0)))
       throw new Error("Values must be non-negative integers");
     values.forEach((value, i) => {
-      const mask = masks[i];
-      if (value > ((1 << mask) - 1)) // FIXME: types & sizing of vars here
+      const bigValue = BigInt(value);
+      const mask = BigInt(masks[i]);
+      if (bigValue > ((1n << mask) - 1n)) // FIXME: types & sizing of vars here
         throw new Error(`Value of ${value} does not fit in ${mask} bits`);
     });
   }
