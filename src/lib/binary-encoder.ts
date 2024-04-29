@@ -1,5 +1,5 @@
 import BinaryCoderBase from "./binary-coder-base";
-import { BitMasking, type EncoderBitMaskings } from "./bit-masking";
+import { BitMasking, EncoderBitMaskings } from "./bit-masking";
 import type { BufferWriteBigIntMethod, BufferWriteNumberMethod, Endianness } from "./types";
 
 const _DEFAULT_CHUNK_SIZE = 256;

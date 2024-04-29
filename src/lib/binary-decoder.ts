@@ -1,5 +1,5 @@
 import BinaryCoderBase from "./binary-coder-base";
-import { BitMasking, type DecoderBitMaskings } from "./bit-masking";
+import { BitMasking, DecoderBitMaskings } from "./bit-masking";
 import type { BufferReadBigIntMethod, BufferReadNumberMethod, Endianness } from "./types";
 
 /**
